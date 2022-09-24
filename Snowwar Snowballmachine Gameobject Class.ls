@@ -3,7 +3,6 @@ property pRoomObject, pMaxBallcount
 on construct me
   pMaxBallcount = getIntVariable("snowwar.object_snowball_machine.maximum_ballcount", 5)
   return 1
-  exit
 end
 
 on deconstruct me
@@ -13,13 +12,12 @@ on deconstruct me
   end if
   me.removeRoomObject()
   return 1
-  exit
 end
 
 on define me, tdata
   tTileLoc = me.getGameSystem().convertworldtotilecoordinate(tdata[#objectDataStruct][#x], tdata[#objectDataStruct][#y])
   if (tTileLoc = 0) then
-    return error(me, (("Invalid location, tile not found!" & "\r") & tdata[#objectDataStruct]), #createRoomObject)
+    return error(me, (("Invalid location, tile not found!" & RETURN) & tdata[#objectDataStruct]), #createRoomObject)
   end if
   tdata.setaProp(#tile_x, tTileLoc[#x])
   tdata.setaProp(#tile_y, tTileLoc[#y])
@@ -27,28 +25,24 @@ on define me, tdata
   me.setGameObjectProperty(#tile_y, tTileLoc[#y])
   me.reserveSpaceForObject()
   return me.createRoomObject(tdata)
-  exit
 end
 
 on executeGameObjectEvent me, tEvent, tdata
-  if (tEvent = #add_snowball) then
-    if me.setBallCount((me.getBallCount() + 1)) then
-      return me.renderBallCreation()
-    end if
-  else
-    if (tEvent = #remove_snowball) then
+  case tEvent of
+    #add_snowball:
+      if me.setBallCount((me.getBallCount() + 1)) then
+        return me.renderBallCreation()
+      end if
+    #remove_snowball:
       if me.setBallCount((me.getBallCount() - 1)) then
         return me.renderBallCount()
       end if
-    end if
-  end if
+  end case
   return 0
-  exit
 end
 
 on getBallCount me
   return me.pGameObjectSyncValues[#snowball_count]
-  exit
 end
 
 on setBallCount me, tValue
@@ -59,7 +53,6 @@ on setBallCount me, tValue
     return 0
   end if
   return me.setGameObjectSyncProperty(#snowball_count, tValue)
-  exit
 end
 
 on renderBallCreation me
@@ -67,7 +60,6 @@ on renderBallCreation me
     return 0
   end if
   return pRoomObject.animate(me.getBallCount())
-  exit
 end
 
 on renderBallCount me
@@ -75,7 +67,6 @@ on renderBallCount me
     return 0
   end if
   return pRoomObject.render(me.getBallCount())
-  exit
 end
 
 on createRoomObject me, tDataStruct
@@ -86,7 +77,6 @@ on createRoomObject me, tDataStruct
   pRoomObject.define(tDataStruct)
   pRoomObject.render(me.getBallCount())
   return 1
-  exit
 end
 
 on removeRoomObject me
@@ -95,7 +85,6 @@ on removeRoomObject me
   end if
   pRoomObject = 0
   return 1
-  exit
 end
 
 on reserveSpaceForObject me
@@ -108,5 +97,4 @@ on reserveSpaceForObject me
     return error(me, ("Unable to reserve tile for snowballmachine in:" && me.pGameObjectSyncValues), #reserveSpaceForObject)
   end if
   return 1
-  exit
 end

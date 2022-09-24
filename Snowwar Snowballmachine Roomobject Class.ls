@@ -4,7 +4,6 @@ on define me, tdata
   me.ancestor.define(tdata)
   me.setFrame(tdata[#objectDataStruct][#snowball_count])
   return 1
-  exit
 end
 
 on setFrame me, tValue
@@ -23,7 +22,6 @@ on setFrame me, tValue
   tName = (tName.char[1] & "0")
   tsprite.member = member(getmemnum(tName))
   return 1
-  exit
 end
 
 on animate me
@@ -32,7 +30,6 @@ on animate me
   tName = (tName.char[1] & "1")
   tsprite.member = member(getmemnum(tName))
   return 1
-  exit
 end
 
 on select me
@@ -55,5 +52,4 @@ on select me
     return tFramework.executeGameObjectEvent(getObject(#session).GET("user_game_index"), #send_set_target_tile, [#tile_x: (me.pLocX + 1), #tile_y: me.pLocY])
   end if
   return 0
-  exit
 end

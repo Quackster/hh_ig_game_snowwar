@@ -6,7 +6,6 @@ on deconstruct me
   me.resetTargets()
   me.removeSprites()
   return 1
-  exit
 end
 
 on define me, tdata
@@ -18,7 +17,6 @@ on define me, tdata
   me.setGameObjectProperty(#gameobject_collisionshape_radius, getVariable("snowwar.object_snowball.collisionshape_radius"))
   me.createSprites(tdata[#x], tdata[#y], tdata[#z])
   return 1
-  exit
 end
 
 on calculateFlightPath me, tdata, tTargetX, tTargetY
@@ -28,8 +26,8 @@ on calculateFlightPath me, tdata, tTargetX, tTargetY
   tX = tdata.x
   tY = tdata.y
   me.pGameObjectSyncValues[#trajectory] = tdata[#trajectory]
-  tDeltaX = (tTargetX - (tX / 200))
-  tDeltaY = (tTargetY - (tY / 200))
+  tDeltaX = ((tTargetX - tX) / 200)
+  tDeltaY = ((tTargetY - tY) / 200)
   me.pGameObjectSyncValues[#movement_direction] = tGameSystem.get360AngleFromComponents(tDeltaX, tDeltaY)
   if (tdata[#trajectory] = pConstants.TRAJECTORY_QUICK_THROW) then
     tZ = pConstants.QUICK_THROW_HEIGHT_LEVEL
@@ -52,7 +50,6 @@ on calculateFlightPath me, tdata, tTargetX, tTargetY
   me.pGameObjectSyncValues[#parabola_offset] = (me.pGameObjectSyncValues[#time_to_live] / 2)
   me.createSprites(tX, tY, tZ)
   return 1
-  exit
 end
 
 on calculateFrameMovement me
@@ -69,18 +66,18 @@ on calculateFrameMovement me
     else
       tTemp = (me.pGameObjectSyncValues[#time_to_live] - me.pGameObjectSyncValues[#parabola_offset])
     end if
-    tNewZ = (((me.pGameObjectSyncValues[#parabola_offset] * me.pGameObjectSyncValues[#parabola_offset]) - ((tTemp * tTemp) * 4)) + pConstants.QUICK_THROW_HEIGHT_LEVEL)
+    tNewZ = ((((me.pGameObjectSyncValues[#parabola_offset] * me.pGameObjectSyncValues[#parabola_offset]) - (tTemp * tTemp)) * 4) + pConstants.QUICK_THROW_HEIGHT_LEVEL)
   else
     if (me.pGameObjectSyncValues[#trajectory] = pConstants.TRAJECTORY_SHORT_LOB) then
       tNewX = (tLocation3D.x + ((pVelocityTable.GetBaseVelX(me.pGameObjectSyncValues[#movement_direction]) * pConstants.SHORT_LOB_VELOCITY) / 255))
       tNewY = (tLocation3D.y + ((pVelocityTable.GetBaseVelY(me.pGameObjectSyncValues[#movement_direction]) * pConstants.SHORT_LOB_VELOCITY) / 255))
       tTemp = (me.pGameObjectSyncValues[#time_to_live] - me.pGameObjectSyncValues[#parabola_offset])
-      tNewZ = (((me.pGameObjectSyncValues[#parabola_offset] * me.pGameObjectSyncValues[#parabola_offset]) - ((tTemp * tTemp) * 10)) + pConstants.SHORT_LOB_HEIGHT_LEVEL)
+      tNewZ = ((((me.pGameObjectSyncValues[#parabola_offset] * me.pGameObjectSyncValues[#parabola_offset]) - (tTemp * tTemp)) * 10) + pConstants.SHORT_LOB_HEIGHT_LEVEL)
     else
       tNewX = (tLocation3D.x + ((pVelocityTable.GetBaseVelX(me.pGameObjectSyncValues[#movement_direction]) * pConstants.LONG_LOB_VELOCITY) / 255))
       tNewY = (tLocation3D.y + ((pVelocityTable.GetBaseVelY(me.pGameObjectSyncValues[#movement_direction]) * pConstants.LONG_LOB_VELOCITY) / 255))
       tTemp = (me.pGameObjectSyncValues[#time_to_live] - me.pGameObjectSyncValues[#parabola_offset])
-      tNewZ = (((me.pGameObjectSyncValues[#parabola_offset] * me.pGameObjectSyncValues[#parabola_offset]) - ((tTemp * tTemp) * 100)) + pConstants.LONG_LOB_HEIGHT_LEVEL)
+      tNewZ = ((((me.pGameObjectSyncValues[#parabola_offset] * me.pGameObjectSyncValues[#parabola_offset]) - (tTemp * tTemp)) * 100) + pConstants.LONG_LOB_HEIGHT_LEVEL)
     end if
   end if
   me.setLocation(tNewX, tNewY, tNewZ)
@@ -92,7 +89,6 @@ on calculateFrameMovement me
     return me.Remove()
   end if
   return 1
-  exit
 end
 
 on testCollisionWithGround me
@@ -108,7 +104,6 @@ on testCollisionWithGround me
     return 1
   end if
   return 0
-  exit
 end
 
 on moveSprites me, tNewX, tNewY, tNewZ
@@ -129,7 +124,6 @@ on moveSprites me, tNewX, tNewY, tNewZ
   pSpriteSd.loc = point(tloc[1], tloc[2])
   pSpriteSd.locZ = tloc[3]
   return 1
-  exit
 end
 
 on createSprites me, tX, tY, tZ
@@ -139,7 +133,6 @@ on createSprites me, tX, tY, tZ
   pSpriteSd = sprite(reserveSprite(pSpriteOwnerId))
   pSpriteSd.member = member(getmemnum("snowball_sd"))
   return me.moveSprites(tX, tY, tZ)
-  exit
 end
 
 on removeSprites me
@@ -152,7 +145,6 @@ on removeSprites me
   pSprite = VOID
   pSpriteSd = VOID
   return 1
-  exit
 end
 
 on SetConstants me
@@ -169,5 +161,4 @@ on SetConstants me
   pConstants[#SHORT_LOB_HEIGHT_LEVEL] = getIntVariable("SHORT_LOB_HEIGHT_LEVEL")
   pConstants[#LONG_LOB_HEIGHT_LEVEL] = getIntVariable("LONG_LOB_HEIGHT_LEVEL")
   return 1
-  exit
 end

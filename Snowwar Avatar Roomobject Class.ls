@@ -10,7 +10,6 @@ on construct me
     return 0
   end if
   return me.ancestor.construct()
-  exit
 end
 
 on deconstruct me
@@ -22,7 +21,6 @@ on deconstruct me
     return 1
   end if
   return me.ancestor.deconstruct()
-  exit
 end
 
 on define me, tdata
@@ -30,24 +28,20 @@ on define me, tdata
   pTeamId = string(tdata[#team_id])
   pAvatarId = string(tdata[#human_id])
   callAncestor(#define, me, tdata)
-  if (tdata[#activity_state] = 1) then
-    me.gameObjectAction("start_create")
-  else
-    if (tdata[#activity_state] = 2) then
+  case tdata[#activity_state] of
+    1:
+      me.gameObjectAction("start_create")
+    2:
       tParams = [:]
       tParams.addProp(#hit_direction, tdata[#body_direction])
       me.gameObjectAction("start_stunned", tParams)
       me.gameObjectAction("next_stunned")
-    else
-      if (tdata[#activity_state] = 3) then
-        me.gameObjectAction("start_invincible")
-      end if
-    end if
-  end if
+    3:
+      me.gameObjectAction("start_invincible")
+  end case
   pReady = 1
   me.setOwnHiliter(1)
   return 1
-  exit
 end
 
 on select me
@@ -78,24 +72,21 @@ on select me
     end if
   end if
   return 0
-  exit
 end
 
 on setAvatarEventListener me, tTargetID
   tsprite = me.pMatteSpr
-  if (not ilk(tsprite) = #sprite) then
+  if not (ilk(tsprite) = #sprite) then
     return 0
   end if
   tsprite.registerProcedure(#eventProcSnowwarUserRollOver, tTargetID, #mouseEnter)
   tsprite.registerProcedure(#eventProcSnowwarUserRollOver, tTargetID, #mouseLeave)
   return 1
-  exit
 end
 
 on gameObjectRefreshLocation me, tX, tY, tH, tDirHead, tDirBody
   me.resetValues(tX, tY, tH, tDirHead, tDirBody)
   return 1
-  exit
 end
 
 on gameObjectNewMoveTarget me, tX, tY, tH, tDirHead, tDirBody, tAction
@@ -116,7 +107,6 @@ on gameObjectNewMoveTarget me, tX, tY, tH, tDirHead, tDirBody, tAction
   call(#defineAct, me.getDefinedPartList(pActionPartList), "wlk")
   me.Refresh(me.pLocX, me.pLocY, me.pLocH)
   return 1
-  exit
 end
 
 on gameObjectMoveDone me, tX, tY, tH, tDirHead, tDirBody, tAction
@@ -126,19 +116,18 @@ on gameObjectMoveDone me, tX, tY, tH, tDirHead, tDirBody, tAction
   me.setHumanSpriteLoc()
   me.setOwnHiliter(1)
   return 1
-  exit
 end
 
 on gameObjectAction me, tAction, tdata
-  if (tAction = "start_throw") then
-    me.resetValues(me.pLocX, me.pLocY, me.pLocH, tdata, tdata)
-    me.Refresh(me.pLocX, me.pLocY, me.pLocH)
-    call(#defineAct, me.getDefinedPartList(pActionPartList), "tr1")
-    me.pChanges = 1
-    pAvatarAction[#tag] = "throw"
-    return me.delay(100, #gameObjectAction, "next_throw")
-  else
-    if (tAction = "next_throw") then
+  case tAction of
+    "start_throw":
+      me.resetValues(me.pLocX, me.pLocY, me.pLocH, tdata, tdata)
+      me.Refresh(me.pLocX, me.pLocY, me.pLocH)
+      call(#defineAct, me.getDefinedPartList(pActionPartList), "tr1")
+      me.pChanges = 1
+      pAvatarAction[#tag] = "throw"
+      return me.delay(100, #gameObjectAction, "next_throw")
+    "next_throw":
       if (pAvatarAction[#tag] <> "throw") then
         return 1
       end if
@@ -150,98 +139,83 @@ on gameObjectAction me, tAction, tdata
         put "next_throw calling timer_reset_figure"
       end if
       return me.delay(300, #gameObjectAction, "timer_reset_figure")
-    else
-      if (tAction = "timer_reset_figure") then
-        if (pAvatarAction[#tag] <> EMPTY) then
-          return 1
-        end if
-        me.gameObjectAction("reset_figure", tdata)
-      else
-        if (tAction = "reset_figure") then
-          me.pInvincible = 0
-          me.pMainAction = "std"
-          if (pAvatarAction.findPos(#originaldirection) > 0) then
-            me.pDirection = pAvatarAction[#originaldirection]
-          end if
-          pAvatarAction[#tag] = EMPTY
-          if (ilk(me.pSprite) = #sprite) then
-            me.pSprite.blend = 100
-          end if
-          me.resetValues(me.pLocX, me.pLocY, me.pLocH, me.pDirection, me.pDirection)
-          me.arrangeParts()
-          call(#reset, me.pPartList)
-          me.pChanges = 1
-        else
-          if (tAction = "start_create") then
-            pAvatarAction[#tag] = EMPTY
-            tDirection = (me.pDirection - (me.pDirection mod 2))
-            call(#defineDir, me.pPartList, tDirection)
-            me.pMainAction = "pck"
-            call(#defineAct, me.getDefinedPartList(pActionPartList), "pck")
-            me.pChanges = 1
-            me.arrangeParts()
-            me.render()
-          else
-            if (tAction = "start_stunned") then
-              me.gameObjectMoveDone(me.pLocX, me.pLocY, me.pLocH, me.pDirection, me.pDirection)
-              tBallDirection = (tdata[#hit_direction] - (tdata[#hit_direction] mod 2))
-              tMyDirection = (me.pDirection - (me.pDirection mod 2))
-              if ((tBallDirection <> tMyDirection) and ((tBallDirection mod 4) = (tMyDirection mod 4))) then
-                tDeathDirection = tMyDirection
-                tFaceUp = 1
-              else
-                tDeathDirection = tBallDirection
-                tFaceUp = 0
-              end if
-              pAvatarAction[#direction] = tDeathDirection
-              pAvatarAction[#originaldirection] = me.pDirection
-              pAvatarAction[#frame] = 1
-              pAvatarAction[#tag] = "dead"
-              if tFaceUp then
-                pAvatarAction[#facedown] = 0
-                pAvatarAction[#member] = "fb"
-              else
-                pAvatarAction[#facedown] = 1
-                pAvatarAction[#member] = "ff"
-              end if
-              me.pDirection = tDeathDirection
-              call(#defineDir, me.pPartList, me.pDirection)
-              call(#defineAct, me.getDefinedPartList(pActionPartList), (pAvatarAction[#member] & "1"))
-              me.pMainAction = "std"
-              me.arrangeParts()
-              me.render()
-              return me.delay(80, #gameObjectAction, "next_stunned")
-            else
-              if (tAction = "next_stunned") then
-                if (pAvatarAction[#tag] <> "dead") then
-                  return me.gameObjectAction("reset_figure")
-                end if
-                repeat with i = 1 to count(me.pPartList)
-                  tPart = getAt(me.pPartList, i)
-                  tPart.pAction = "foo"
-                end repeat
-                pAvatarAction[#frame] = 2
-                call(#defineDirMultiple, me.pPartList, pAvatarAction[#direction], pActionPartList)
-                call(#defineAct, me.getDefinedPartList(pActionPartList), (pAvatarAction[#member] & "2"))
-                me.pChanges = 1
-                me.arrangeParts()
-                me.render()
-              else
-                if (tAction = "start_invincible") then
-                  pAvatarAction[#tag] = EMPTY
-                  me.gameObjectAction("reset_figure")
-                  me.pInvincible = 1
-                  me.pInvincibleCounter = 0
-                end if
-              end if
-            end if
-          end if
-        end if
+    "timer_reset_figure":
+      if (pAvatarAction[#tag] <> EMPTY) then
+        return 1
       end if
-    end if
-  end if
+      me.gameObjectAction("reset_figure", tdata)
+    "reset_figure":
+      me.pInvincible = 0
+      me.pMainAction = "std"
+      if (pAvatarAction.findPos(#originaldirection) > 0) then
+        me.pDirection = pAvatarAction[#originaldirection]
+      end if
+      pAvatarAction[#tag] = EMPTY
+      if (ilk(me.pSprite) = #sprite) then
+        me.pSprite.blend = 100
+      end if
+      me.resetValues(me.pLocX, me.pLocY, me.pLocH, me.pDirection, me.pDirection)
+      me.arrangeParts()
+      call(#reset, me.pPartList)
+      me.pChanges = 1
+    "start_create":
+      pAvatarAction[#tag] = EMPTY
+      tDirection = (me.pDirection - (me.pDirection mod 2))
+      call(#defineDir, me.pPartList, tDirection)
+      me.pMainAction = "pck"
+      call(#defineAct, me.getDefinedPartList(pActionPartList), "pck")
+      me.pChanges = 1
+      me.arrangeParts()
+      me.render()
+    "start_stunned":
+      me.gameObjectMoveDone(me.pLocX, me.pLocY, me.pLocH, me.pDirection, me.pDirection)
+      tBallDirection = (tdata[#hit_direction] - (tdata[#hit_direction] mod 2))
+      tMyDirection = (me.pDirection - (me.pDirection mod 2))
+      if ((tBallDirection <> tMyDirection) and ((tBallDirection mod 4) = (tMyDirection mod 4))) then
+        tDeathDirection = tMyDirection
+        tFaceUp = 1
+      else
+        tDeathDirection = tBallDirection
+        tFaceUp = 0
+      end if
+      pAvatarAction[#direction] = tDeathDirection
+      pAvatarAction[#originaldirection] = me.pDirection
+      pAvatarAction[#frame] = 1
+      pAvatarAction[#tag] = "dead"
+      if tFaceUp then
+        pAvatarAction[#facedown] = 0
+        pAvatarAction[#member] = "fb"
+      else
+        pAvatarAction[#facedown] = 1
+        pAvatarAction[#member] = "ff"
+      end if
+      me.pDirection = tDeathDirection
+      call(#defineDir, me.pPartList, me.pDirection)
+      call(#defineAct, me.getDefinedPartList(pActionPartList), (pAvatarAction[#member] & "1"))
+      me.pMainAction = "std"
+      me.arrangeParts()
+      me.render()
+      return me.delay(80, #gameObjectAction, "next_stunned")
+    "next_stunned":
+      if (pAvatarAction[#tag] <> "dead") then
+        return me.gameObjectAction("reset_figure")
+      end if
+      repeat with tPart in me.pPartList
+        tPart.pAction = "foo"
+      end repeat
+      pAvatarAction[#frame] = 2
+      call(#defineDirMultiple, me.pPartList, pAvatarAction[#direction], pActionPartList)
+      call(#defineAct, me.getDefinedPartList(pActionPartList), (pAvatarAction[#member] & "2"))
+      me.pChanges = 1
+      me.arrangeParts()
+      me.render()
+    "start_invincible":
+      pAvatarAction[#tag] = EMPTY
+      me.gameObjectAction("reset_figure")
+      me.pInvincible = 1
+      me.pInvincibleCounter = 0
+  end case
   return 1
-  exit
 end
 
 on prepare me
@@ -252,16 +226,15 @@ on prepare me
       me.pInvincibleCounter = 0
     end if
   end if
-  me.pAnimCounter = (me.pAnimCounter + (1 mod 4))
+  me.pAnimCounter = ((me.pAnimCounter + 1) mod 4)
   if me.pMoving then
     tFactor = (float((the milliSeconds - me.pMoveStart)) / me.pMoveTime)
-    if (tFactor > 0) then
-      tFactor = 0
+    if (tFactor > 1.0) then
+      tFactor = 1.0
     end if
-    me.pScreenLoc = ((me.pDestLScreen - (me.pStartLScreen * tFactor)) + me.pStartLScreen)
+    me.pScreenLoc = (((me.pDestLScreen - me.pStartLScreen) * tFactor) + me.pStartLScreen)
     me.pChanges = 1
   end if
-  exit
 end
 
 on update me
@@ -274,7 +247,6 @@ on update me
   else
     me.render()
   end if
-  exit
 end
 
 on render me
@@ -314,8 +286,7 @@ on render me
     me.pMatteSpr.width = tSize[1]
     me.pMatteSpr.height = tSize[2]
     me.pBuffer = image(tSize[1], tSize[2], tSize[3])
-    repeat with i = 1 to count(me.pPartList)
-      tPart = getAt(me.pPartList, i)
+    repeat with tPart in me.pPartList
       tPart.resetMemberCache()
     end repeat
   end if
@@ -329,77 +300,57 @@ on render me
   if (pAvatarAction[#tag] = "dead") then
     if (pAvatarAction[#frame] = 1) then
       if pAvatarAction[#facedown] then
-        if (pAvatarAction[#direction] = 0) then
-          tpoint = point(-8, 0)
-        else
-          if (pAvatarAction[#direction] = 2) then
+        case pAvatarAction[#direction] of
+          0:
+            tpoint = point(-8, 0)
+          2:
             tpoint = point(-10, -2)
-          else
-            if (pAvatarAction[#direction] = 4) then
-              tpoint = point(35, -5)
-            else
-              if (pAvatarAction[#direction] = 6) then
-                tpoint = point(37, 0)
-              end if
-            end if
-          end if
-        end if
+          4:
+            tpoint = point(35, -5)
+          6:
+            tpoint = point(37, 0)
+        end case
       else
-        if (pAvatarAction[#direction] = 0) then
-          tpoint = point(10, -3)
-        else
-          if (pAvatarAction[#direction] = 2) then
+        case pAvatarAction[#direction] of
+          0:
+            tpoint = point(10, -3)
+          2:
             tpoint = point(30, 0)
-          else
-            if (pAvatarAction[#direction] = 4) then
-              tpoint = point(0, 0)
-            else
-              if (pAvatarAction[#direction] = 6) then
-                tpoint = point(17, -3)
-              end if
-            end if
-          end if
-        end if
+          4:
+            tpoint = point(0, 0)
+          6:
+            tpoint = point(17, -3)
+        end case
       end if
     else
       if pAvatarAction[#facedown] then
-        if (pAvatarAction[#direction] = 0) then
-          tpoint = point(-15, -10)
-        else
-          if (pAvatarAction[#direction] = 2) then
+        case pAvatarAction[#direction] of
+          0:
+            tpoint = point(-15, -10)
+          2:
             tpoint = point(-12, -36)
-          else
-            if (pAvatarAction[#direction] = 4) then
-              tpoint = point(38, -36)
-            else
-              if (pAvatarAction[#direction] = 6) then
-                tpoint = point(42, -10)
-              end if
-            end if
-          end if
-        end if
+          4:
+            tpoint = point(38, -36)
+          6:
+            tpoint = point(42, -10)
+        end case
       else
-        if (pAvatarAction[#direction] = 0) then
-          tpoint = point(38, -27)
-        else
-          if (pAvatarAction[#direction] = 2) then
+        case pAvatarAction[#direction] of
+          0:
+            tpoint = point(38, -27)
+          2:
             tpoint = point(37, -3)
-          else
-            if (pAvatarAction[#direction] = 4) then
-              tpoint = point(-7, -3)
-            else
-              if (pAvatarAction[#direction] = 6) then
-                tpoint = point(-10, -26)
-              end if
-            end if
-          end if
-        end if
+          4:
+            tpoint = point(-7, -3)
+          6:
+            tpoint = point(-10, -26)
+        end case
       end if
     end if
     me.pMember.regPoint = (me.pMember.regPoint + tpoint)
   end if
   if me.pCorrectLocZ then
-    tOffZ = ((me.pLocH + (me.pRestingHeight * 1000)) + 2)
+    tOffZ = (((me.pLocH + me.pRestingHeight) * 1000) + 2)
   else
     tOffZ = 2
   end if
@@ -420,7 +371,6 @@ on render me
   me.pMember.image.copyPixels(me.pBuffer, me.pUpdateRect, me.pUpdateRect)
   me.setOwnHiliter(1)
   return 1
-  exit
 end
 
 on setHumanSpriteLoc me
@@ -436,7 +386,6 @@ on setHumanSpriteLoc me
   me.pShadowSpr.loc = (me.pSprite.loc + [me.pShadowFix, 0])
   me.pShadowSpr.locZ = (me.pSprite.locZ - 3)
   return 1
-  exit
 end
 
 on Refresh me, tX, tY, tH
@@ -444,7 +393,6 @@ on Refresh me, tX, tY, tH
   me.arrangeParts()
   me.pChanges = 1
   return 1
-  exit
 end
 
 on resetValues me, tX, tY, tH, tDirHead, tDirBody
@@ -462,7 +410,6 @@ on resetValues me, tX, tY, tH, tDirHead, tDirBody
   me.pHeadDir = tDirHead
   me.pChanges = 1
   return 1
-  exit
 end
 
 on setBlendInvincible me
@@ -476,7 +423,6 @@ on setBlendInvincible me
     tsprite.blend = 20
   end if
   return 1
-  exit
 end
 
 on arrangeParts me
@@ -486,20 +432,18 @@ on arrangeParts me
   if (me.pPartList.count = 0) then
     return 0
   end if
-  if (pAvatarAction[#tag] = "dead") then
-    me.arrangeParts_Death()
-  else
-    if (me.pMainAction = "pck") then
+  case 1 of
+    (pAvatarAction[#tag] = "dead"):
+      me.arrangeParts_Death()
+    (me.pMainAction = "pck"):
       me.arrangeParts_Pick()
-    else
+    otherwise:
       callAncestor(#arrangeParts, me)
-    end if
-  end if
+  end case
   repeat with i = 1 to me.pPartList.count
     me.pPartIndex[me.pPartList[i].pPart] = i
   end repeat
   return 1
-  exit
 end
 
 on arrangeParts_Pick me, tXFix, tYFix
@@ -507,8 +451,7 @@ on arrangeParts_Pick me, tXFix, tYFix
     return 0
   end if
   tDirection = (me.pDirection - (me.pDirection mod 2))
-  repeat with i = 1 to count(me.pPartList)
-    tPart = getAt(me.pPartList, i)
+  repeat with tPart in me.pPartList
     if (pActionPartList.findPos(tPart.pPart) = 0) then
       tPart.pXFix = 3
       tPart.pYFix = 5
@@ -516,7 +459,6 @@ on arrangeParts_Pick me, tXFix, tYFix
   end repeat
   me.pChanges = 1
   return 1
-  exit
 end
 
 on arrangeParts_Death me
@@ -524,56 +466,43 @@ on arrangeParts_Death me
     return 0
   end if
   if pAvatarAction[#facedown] then
-    if (pAvatarAction[#direction] = 0) then
-      tHeadBelow = 1
-      tFace = point(-3, 11)
-    else
-      if (pAvatarAction[#direction] = 2) then
+    case pAvatarAction[#direction] of
+      0:
+        tHeadBelow = 1
+        tFace = point(-3, 11)
+      2:
         tFace = point(1, 9)
-      else
-        if (pAvatarAction[#direction] = 4) then
-          tFace = point(3, 9)
-        else
-          if (pAvatarAction[#direction] = 6) then
-            tHeadBelow = 1
-            tFace = point(-1, 10)
-          end if
-        end if
-      end if
-    end if
+      4:
+        tFace = point(3, 9)
+      6:
+        tHeadBelow = 1
+        tFace = point(-1, 10)
+    end case
   else
-    if (pAvatarAction[#direction] = 0) then
-      tHeadBelow = 1
-      tFace = point(-2, 10)
-    else
-      if (pAvatarAction[#direction] = 2) then
+    case pAvatarAction[#direction] of
+      0:
+        tHeadBelow = 1
+        tFace = point(-2, 10)
+      2:
         tFace = point(19, 8)
-      else
-        if (pAvatarAction[#direction] = 4) then
-          tFace = point(18, 7)
-        else
-          if (pAvatarAction[#direction] = 6) then
-            tHeadBelow = 1
-            tFace = point(-1, 10)
-          end if
-        end if
-      end if
-    end if
+      4:
+        tFace = point(18, 7)
+      6:
+        tHeadBelow = 1
+        tFace = point(-1, 10)
+    end case
   end if
   tActionParts = []
-  repeat with i = 1 to count(pActionPartList)
-    tPart = getAt(pActionPartList, i)
+  repeat with tPart in pActionPartList
     if not voidp(me.pPartIndex[tPart]) then
       tActionParts.add(me.pPartList[me.pPartIndex[tPart]])
     end if
   end repeat
-  i = me.pPartList.count
-  repeat while (i >= 1)
+  repeat with i = me.pPartList.count down to 1
     tPart = me.pPartList[i]
     if (pActionPartList.findPos(tPart.pPart) > 0) then
       me.pPartList.deleteAt(i)
     end if
-    i = (255 + i)
   end repeat
   tHeadBelow = 1
   repeat with i = 1 to tActionParts.count
@@ -584,8 +513,7 @@ on arrangeParts_Death me
     end if
     me.pPartList.addAt(i, tPart)
   end repeat
-  repeat with i = 1 to count(me.pPartList)
-    tPart = getAt(me.pPartList, i)
+  repeat with tPart in me.pPartList
     if (pActionPartList.findPos(tPart.pPart) = 0) then
       tPart.pXFix = tFace.locH
       tPart.pYFix = tFace.locV
@@ -593,26 +521,22 @@ on arrangeParts_Death me
   end repeat
   me.pChanges = 1
   return 1
-  exit
 end
 
 on getPartListNameBase me
   return "snowwar.human.parts"
-  exit
 end
 
 on setPartLists me, tmodels
   tmodels = me.fixSnowWarFigure(tmodels)
   callAncestor(#setPartLists, me, tmodels)
   return 1
-  exit
 end
 
 on fixSnowWarFigure me, tFigure
-  repeat with i = 1 to count(pActionPartList)
-    tPartSymbol = getAt(pActionPartList, i)
+  repeat with tPartSymbol in pActionPartList
     if voidp(tFigure[tPartSymbol]) then
-      tFigure[tPartSymbol] = []
+      tFigure[tPartSymbol] = [:]
     end if
     tFigure[tPartSymbol]["model"] = "snowwar"
     tFigure[tPartSymbol]["color"] = rgb("EEEEEE")
@@ -630,7 +554,6 @@ on fixSnowWarFigure me, tFigure
     tFigure["sh"]["color"] = tTeamColor
   end if
   return tFigure
-  exit
 end
 
 on setOwnHiliter me, tstate
@@ -664,22 +587,18 @@ on setOwnHiliter me, tstate
   end if
   tsprite.locZ = (me.pScreenLoc[3] + 1)
   tsprite.loc = point((me.pScreenLoc[1] + (tsprite.member.width / 2)), me.pScreenLoc[2])
-  exit
 end
 
 on getPicture me, tImg
   return me.getPartialPicture(#Full, tImg, 4, "sh")
-  exit
 end
 
 on getTeamId me
   return pTeamId
-  exit
 end
 
 on getAvatarId me
   return pAvatarId
-  exit
 end
 
 on action_mv me, tProps
@@ -700,5 +619,4 @@ on action_mv me, tProps
   me.pDestLScreen = me.pGeometry.getScreenCoordinate(tLocX, tLocY, tLocH)
   me.pMoveStart = the milliSeconds
   call(#defineAct, me.getDefinedPartList(pActionPartList), "wlk")
-  exit
 end

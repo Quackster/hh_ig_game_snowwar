@@ -47,7 +47,6 @@ on hide me
   pNameSpriteNum = VOID
   pBottomSpriteNum = VOID
   return 0
-  exit
 end
 
 on getNameFieldMember me, tText, tTeamId
@@ -69,5 +68,4 @@ on getNameFieldMember me, tText, tTeamId
   tNameFieldMem.font = tFontStruct[#font]
   tNameFieldMem.text = tText
   return tNameFieldMem
-  exit
 end

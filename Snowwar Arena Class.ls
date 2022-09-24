@@ -9,7 +9,6 @@ on construct me
   executeMessage(#SetMinigameHandler, getClassVariable("snowwar.minigamehandler.class"))
   executeMessage(#pause_messeger_update)
   return 1
-  exit
 end
 
 on deconstruct me
@@ -18,7 +17,6 @@ on deconstruct me
   executeMessage(#gamesystem_removefacade, getVariable("snowwar.gamesystem.id"))
   executeMessage(#resume_messeger_update)
   return 1
-  exit
 end
 
 on prepare me
@@ -32,9 +30,8 @@ on prepare me
       tRoomInt.hideRoomBar()
     end if
   end if
-  getConnection(#info).send("G_OBJS")
+  getConnection(#Info).send("G_OBJS")
   return 1
-  exit
 end
 
 on handleSpectatorModeOff me
@@ -43,7 +40,6 @@ on handleSpectatorModeOff me
   end if
   getObject(pFrameworkId).enterLounge()
   return 1
-  exit
 end
 
 on handleUserCreated me, tName, tUserStrId
@@ -55,7 +51,6 @@ on handleUserCreated me, tName, tUserStrId
     tRoomInt.showArrowHiliter(tUserStrId)
   end if
   return 1
-  exit
 end
 
 on hideArrowHiliter me
@@ -64,5 +59,4 @@ on hideArrowHiliter me
     return 0
   end if
   return tRoomInt.hideArrowHiliter()
-  exit
 end

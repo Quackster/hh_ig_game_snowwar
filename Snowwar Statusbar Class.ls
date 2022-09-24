@@ -10,7 +10,6 @@ on construct me
   pMaxBallcount = getIntVariable("snowwar.snowball.maximum")
   pLastHealth = pMaxHealth
   return 1
-  exit
 end
 
 on deconstruct me
@@ -18,43 +17,28 @@ on deconstruct me
   unregisterMessage(#updateInfostandAvatar, me.getID())
   removeWindow(pBottomBarId)
   return 1
-  exit
 end
 
 on Refresh me, tTopic, tdata
-  if (tTopic = #gamestart) then
-    return me.updateBallCount(pLastBallcount)
-  else
-    if (tTopic = #gameend) then
+  case tTopic of
+    #gamestart:
+      return me.updateBallCount(pLastBallcount)
+    #gameend:
       return me.setCreateButtonState("_off")
-    else
-      if (tTopic = #update_game_visuals) then
-        return me.updateGameVisuals()
-      else
-        if (tTopic = #statusbar_health_update) then
-          return me.updateHealth(tdata)
-        else
-          if (tTopic = #statusbar_ballcount_update) then
-            return me.updateBallCount(tdata)
-          else
-            if (tTopic = #statusbar_createball_started) then
-              return me.animateBallCreateStarted()
-            else
-              if (tTopic = #statusbar_createball_stopped) then
-                return me.updateBallCount(pLastBallcount)
-              else
-                if (tTopic = #statusbar_disable_buttons) then
-                  return me.setCreateButtonState("_off")
-                end if
-              end if
-            end if
-          end if
-        end if
-      end if
-    end if
-  end if
+    #update_game_visuals:
+      return me.updateGameVisuals()
+    #statusbar_health_update:
+      return me.updateHealth(tdata)
+    #statusbar_ballcount_update:
+      return me.updateBallCount(tdata)
+    #statusbar_createball_started:
+      return me.animateBallCreateStarted()
+    #statusbar_createball_stopped:
+      return me.updateBallCount(pLastBallcount)
+    #statusbar_disable_buttons:
+      return me.setCreateButtonState("_off")
+  end case
   return 1
-  exit
 end
 
 on update me
@@ -64,20 +48,18 @@ on update me
   if (pBallCreateAnimTimer > 0) then
     me.animateBallCreateStarted()
   end if
-  exit
 end
 
 on updateGameVisuals me
   if not getObject(#session).exists("user_game_index") then
     return 0
   end if
-  tObjectId = getObject(#session).GET("user_game_index")
-  tHealth = me.getGameSystem().getGameObjectProperty(tObjectId, #hit_points)
-  tBallCount = me.getGameSystem().getGameObjectProperty(tObjectId, #snowball_count)
+  tObjectID = getObject(#session).GET("user_game_index")
+  tHealth = me.getGameSystem().getGameObjectProperty(tObjectID, #hit_points)
+  tBallCount = me.getGameSystem().getGameObjectProperty(tObjectID, #snowball_count)
   me.updateHealth(tHealth)
   me.updateBallCount(tBallCount)
   return 1
-  exit
 end
 
 on updateHealth me, tValue
@@ -96,7 +78,7 @@ on updateHealth me, tValue
   if (pOrigHealthBarLoc = VOID) then
     pOrigHealthBarLoc = point(tElem.getProperty(#locH), tElem.getProperty(#locV))
   end if
-  tPercent = ((tValue * 0) / pMaxHealth)
+  tPercent = ((tValue * 1.0) / pMaxHealth)
   if (tPercent > 0.69999999999999996) then
     tmember = "ui_healthbar_green"
   else
@@ -115,11 +97,10 @@ on updateHealth me, tValue
     pMaxHealthBarHeight = tElemHeight
   end if
   tHeightAdjust = integer(((tPercent * pMaxHealthBarHeight) - tElemHeight))
-  tTotalAdjust = ((pMaxHealthBarHeight - tElemHeight) + tHeightAdjust)
+  tTotalAdjust = (pMaxHealthBarHeight - (tElemHeight + tHeightAdjust))
   tElem.resizeBy(0, tHeightAdjust)
   tElem.moveTo(pOrigHealthBarLoc.locH, (pOrigHealthBarLoc.locV + tTotalAdjust))
   return 1
-  exit
 end
 
 on updateBallCount me, tValue
@@ -137,19 +118,16 @@ on updateBallCount me, tValue
       tElem.setProperty(#visible, (tBallNum <= tValue))
     end if
   end repeat
-  if (tValue = pMaxBallcount) then
-    return me.setCreateButtonState("_off")
-  else
-    if (tValue = 0) then
+  case tValue of
+    pMaxBallcount:
+      return me.setCreateButtonState("_off")
+    0:
       if (pLastHealth = 0) then
         return 1
       end if
       return me.animateBallCountFlashing()
-    else
-      return me.setCreateButtonState(EMPTY)
-    end if
-  end if
-  exit
+  end case
+  return me.setCreateButtonState(EMPTY)
 end
 
 on animateBallCountFlashing me
@@ -181,7 +159,6 @@ on animateBallCountFlashing me
   tMemName = [EMPTY, "_hilite"][tMemNum]
   me.setCreateButtonState(tMemName)
   return 1
-  exit
 end
 
 on animateBallCreateStarted me
@@ -198,7 +175,6 @@ on animateBallCreateStarted me
       pBallCreateAnimTimer = (pBallCreateAnimTimer + 1)
     end if
   end if
-  exit
 end
 
 on setCreateButtonState me, tstate
@@ -228,7 +204,6 @@ on setCreateButtonState me, tstate
   end if
   tElem.setProperty(#member, member(tMemNum))
   return 1
-  exit
 end
 
 on updateSoundIcon me
@@ -250,7 +225,6 @@ on updateSoundIcon me
     tElem.feedImage(tmember.image)
   end if
   return 1
-  exit
 end
 
 on replaceRoomBar me
@@ -279,39 +253,26 @@ on replaceRoomBar me
   me.updateSoundIcon()
   me.setCreateButtonState("_off")
   return 1
-  exit
 end
 
 on updateRoomBarFigure me
   tSpectator = me.getGameSystem().getSpectatorModeFlag()
   if (not tSpectator and objectExists("Figure_Preview")) then
-    getObject("Figure_Preview").createHumanPartPreview(pBottomBarId, "ownhabbo_icon_image", #head)
+    getObject("Figure_Preview").createHumanPartPreview(pBottomBarId, "snowwar_avatar_face", #head)
   end if
-  exit
 end
 
 on eventProcRoomBar me, tEvent, tSprID, tParam
   if (tEvent = #mouseUp) then
-    if (tSprID = "snowwar_button_create") then
-      if not getObject(#session).exists("user_game_index") then
-        return 0
-      end if
-      return me.getGameSystem().executeGameObjectEvent(getObject(#session).GET("user_game_index"), #send_create_snowball)
-    else
-      if (tSprID = "gs_int_sound_image") then
+    case tSprID of
+      "snowwar_button_create":
+        if not getObject(#session).exists("user_game_index") then
+          return 0
+        end if
+        return me.getGameSystem().executeGameObjectEvent(getObject(#session).GET("user_game_index"), #send_create_snowball)
+      "gs_int_sound_image":
         setSoundState(not getSoundState())
         return me.updateSoundIcon()
-      end if
-    end if
-  end if
-  if (tSprID = "game_rules_image") then
-    case tEvent of
-      #mouseUp:
-        return executeMessage(#ig_show_game_rules)
-      #mouseEnter:
-        return executeMessage(#setRollOverInfo, getText("interface_icon_game_rules"))
-      #mouseLeave:
-        return executeMessage(#setRollOverInfo, EMPTY)
     end case
   end if
   tRoomInt = getObject("RoomBarProgram")
@@ -319,5 +280,4 @@ on eventProcRoomBar me, tEvent, tSprID, tParam
     return 0
   end if
   return tRoomInt.eventProcRoomBar(tEvent, tSprID, tParam)
-  exit
 end

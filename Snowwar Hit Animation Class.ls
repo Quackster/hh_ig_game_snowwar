@@ -1,16 +1,14 @@
-property pActive, pStep, pAnimFrame, pSprite
+property pActive, pSprite, pStep, pAnimFrame
 
 on construct me
   pActive = 1
   return 1
-  exit
 end
 
 on deconstruct me
   pActive = 0
   me.removeSprites()
   return 1
-  exit
 end
 
 on define me, tScreenLoc, tlocz
@@ -18,7 +16,6 @@ on define me, tScreenLoc, tlocz
   pAnimFrame = 1
   me.createSprites(tScreenLoc, tlocz)
   return 1
-  exit
 end
 
 on update me
@@ -35,7 +32,6 @@ on update me
   pSprite.member = member(getmemnum(("hit" & pAnimFrame)))
   pAnimFrame = (pAnimFrame + 1)
   return 1
-  exit
 end
 
 on createSprites me, tScreenLoc, tlocz
@@ -45,7 +41,6 @@ on createSprites me, tScreenLoc, tlocz
   pSprite.ink = 8
   pSprite.loc = point(tScreenLoc[1], tScreenLoc[2])
   return 1
-  exit
 end
 
 on removeSprites me
@@ -55,5 +50,4 @@ on removeSprites me
   releaseSprite(pSprite.spriteNum)
   pSprite = VOID
   return 1
-  exit
 end

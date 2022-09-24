@@ -2,18 +2,15 @@ property pObjectId
 
 on construct me
   return 1
-  exit
 end
 
 on deconstruct me
   me.removeRoomObject()
   return 1
-  exit
 end
 
 on define me, tdata
   return me.createRoomObject(tdata)
-  exit
 end
 
 on render me, tValue
@@ -21,7 +18,6 @@ on render me, tValue
     return 0
   end if
   return me.getRoomObject().setFrame(tValue)
-  exit
 end
 
 on animate me, tValue
@@ -31,7 +27,6 @@ on animate me, tValue
   me.getRoomObject().animate()
   me.delay(1000, #render, tValue)
   return 1
-  exit
 end
 
 on createRoomObject me, tdata
@@ -39,7 +34,7 @@ on createRoomObject me, tdata
   pObjectId = tdata[#id]
   tdata[#class] = "snowball_machine"
   tdata[#direction] = [0, 0]
-  tdata[#altitude] = 0
+  tdata[#altitude] = 0.0
   tdata[#dimensions] = [0, 0]
   tdata[#x] = tdata[#tile_x]
   tdata[#y] = tdata[#tile_y]
@@ -52,8 +47,7 @@ on createRoomObject me, tdata
     return error(me, "Room class container not found!", #createRoomObject)
   end if
   tClassContainer.set(tdata["class"], getClassVariable("snowwar.object_snowball_machine.roomobject.class"))
-  return tRoomComponent.createActiveObject(tdata)
-  exit
+  return tRoomComponent.validateActiveObjects(tdata)
 end
 
 on getRoomObject me
@@ -62,7 +56,6 @@ on getRoomObject me
     return error(me, "Room component unavailable!", #getRoomObject)
   end if
   return tRoomComponentObj.getActiveObject(pObjectId)
-  exit
 end
 
 on removeRoomObject me
@@ -77,5 +70,4 @@ on removeRoomObject me
     return 1
   end if
   return tRoomComponentObj.removeActiveObject(pObjectId)
-  exit
 end

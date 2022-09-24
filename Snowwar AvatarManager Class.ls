@@ -7,7 +7,6 @@ on construct me
   end if
   registerMessage(#create_user, me.getID(), #setAvatarEventListener)
   return 1
-  exit
 end
 
 on deconstruct me
@@ -15,74 +14,60 @@ on deconstruct me
   unregisterMessage(#create_user, me.getID())
   getObject(#session).Remove("game_number_of_teams")
   return 1
-  exit
 end
 
 on Refresh me, tTopic, tdata
-  if (tTopic = #set_number_of_teams) then
-    pNumTeams = tdata
-    getObject(#session).set("game_number_of_teams", tdata)
-  else
-    if (tTopic = #snowwar_event_2) then
+  case tTopic of
+    #set_number_of_teams:
+      pNumTeams = tdata
+      getObject(#session).set("game_number_of_teams", tdata)
+    #snowwar_event_2:
       me.getGameSystem().executeGameObjectEvent(tdata[#id], #set_target, tdata)
-    else
-      if (tTopic = #snowwar_event_3) then
-        me.getGameSystem().executeGameObjectEvent(tdata[#id], #start_throw_snowball, tdata)
-        me.getGameSystem().executeGameObjectEvent(tdata[#id], #substract_ball_count)
+    #snowwar_event_3:
+      me.getGameSystem().executeGameObjectEvent(tdata[#id], #start_throw_snowball, tdata)
+      me.getGameSystem().executeGameObjectEvent(tdata[#id], #substract_ball_count)
+    #snowwar_event_4:
+      me.getGameSystem().executeGameObjectEvent(tdata[#id], #start_throw_snowball, tdata)
+      me.getGameSystem().executeGameObjectEvent(tdata[#id], #substract_ball_count)
+    #snowwar_event_5:
+      playSound(("LS-hit-" & random(2)))
+      tGameSystem = me.getGameSystem()
+      tGameSystem.executeGameObjectEvent(tdata[#id], #substract_hit_points)
+      if (pNumTeams = 1) then
+        tAwardScore = 1
       else
-        if (tTopic = #snowwar_event_4) then
-          me.getGameSystem().executeGameObjectEvent(tdata[#id], #start_throw_snowball, tdata)
-          me.getGameSystem().executeGameObjectEvent(tdata[#id], #substract_ball_count)
-        else
-          if (tTopic = #snowwar_event_5) then
-            playSound(("LS-hit-" & random(2)))
-            tGameSystem = me.getGameSystem()
-            tGameSystem.executeGameObjectEvent(tdata[#id], #substract_hit_points)
-            if (pNumTeams = 1) then
-              tAwardScore = 1
-            else
-              tThisTeam = tGameSystem.getGameObjectProperty(tdata[#id], #team_id)
-              tThatTeam = tGameSystem.getGameObjectProperty(string(tdata[#int_thrower_id]), #team_id)
-              if (tThisTeam <> tThatTeam) then
-                tAwardScore = 1
-              end if
-            end if
-            if tAwardScore then
-              tGameSystem.executeGameObjectEvent(string(tdata[#int_thrower_id]), #award_hit_score)
-            end if
-          else
-            if (tTopic = #snowwar_event_7) then
-              me.getGameSystem().executeGameObjectEvent(tdata[#id], #start_create_snowball)
-            else
-              if (tTopic = #snowwar_event_9) then
-                tGameSystem = me.getGameSystem()
-                tHitDirection8 = tGameSystem.getGeometry().direction360to8(tdata[#hit_direction])
-                playSound("LS-hit-3")
-                tGameSystem.executeGameObjectEvent(tdata[#id], #start_stunned, [#hit_direction: tHitDirection8])
-                tGameSystem.executeGameObjectEvent(tdata[#id], #zero_ball_count)
-                if (pNumTeams = 1) then
-                  tAwardScore = 1
-                else
-                  tThisTeam = tGameSystem.getGameObjectProperty(tdata[#id], #team_id)
-                  tThatTeam = tGameSystem.getGameObjectProperty(string(tdata[#int_thrower_id]), #team_id)
-                  if (tThisTeam <> tThatTeam) then
-                    tAwardScore = 1
-                  end if
-                end if
-                if tAwardScore then
-                  tGameSystem.executeGameObjectEvent(string(tdata[#int_thrower_id]), #award_kill_score)
-                end if
-              else
-                return error(me, ((("Undefined event!" && tTopic) && "for") && me.pID), #Refresh)
-              end if
-            end if
-          end if
+        tThisTeam = tGameSystem.getGameObjectProperty(tdata[#id], #team_id)
+        tThatTeam = tGameSystem.getGameObjectProperty(string(tdata[#int_thrower_id]), #team_id)
+        if (tThisTeam <> tThatTeam) then
+          tAwardScore = 1
         end if
       end if
-    end if
-  end if
+      if tAwardScore then
+        tGameSystem.executeGameObjectEvent(string(tdata[#int_thrower_id]), #award_hit_score)
+      end if
+    #snowwar_event_7:
+      me.getGameSystem().executeGameObjectEvent(tdata[#id], #start_create_snowball)
+    #snowwar_event_9:
+      tGameSystem = me.getGameSystem()
+      tHitDirection8 = tGameSystem.getGeometry().direction360to8(tdata[#hit_direction])
+      playSound("LS-hit-3")
+      tGameSystem.executeGameObjectEvent(tdata[#id], #start_stunned, [#hit_direction: tHitDirection8])
+      tGameSystem.executeGameObjectEvent(tdata[#id], #zero_ball_count)
+      if (pNumTeams = 1) then
+        tAwardScore = 1
+      else
+        tThisTeam = tGameSystem.getGameObjectProperty(tdata[#id], #team_id)
+        tThatTeam = tGameSystem.getGameObjectProperty(string(tdata[#int_thrower_id]), #team_id)
+        if (tThisTeam <> tThatTeam) then
+          tAwardScore = 1
+        end if
+      end if
+      if tAwardScore then
+        tGameSystem.executeGameObjectEvent(string(tdata[#int_thrower_id]), #award_kill_score)
+      end if
+  end case
+  return error(me, ((("Undefined event!" && tTopic) && "for") && me.pID), #Refresh)
   return 1
-  exit
 end
 
 on setAvatarEventListener me, tName, tID
@@ -96,7 +81,6 @@ on setAvatarEventListener me, tName, tID
   end if
   call(#setAvatarEventListener, tObject, me.getID())
   return 1
-  exit
 end
 
 on eventProcSnowwarUserRollOver me, tEvent, tID, tProp
@@ -134,7 +118,6 @@ on eventProcSnowwarUserRollOver me, tEvent, tID, tProp
     setcursor(0)
     return me.displayAvatarInfo(0)
   end if
-  exit
 end
 
 on displayAvatarInfo me, tName, tScore, tTeamId, tloc, tOwnPlayer
@@ -154,5 +137,4 @@ on displayAvatarInfo me, tName, tScore, tTeamId, tloc, tOwnPlayer
     pHiliterObj = VOID
   end if
   return 1
-  exit
 end

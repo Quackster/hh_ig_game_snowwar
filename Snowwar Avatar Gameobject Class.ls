@@ -1,15 +1,13 @@
-property SUBTURN_MOVEMENT, PLAYER_HEIGHT, pIsOwnPlayer, pRoomObject, pActiveEffects, pDump, pWalkLoop, pSprite
+property SUBTURN_MOVEMENT, PLAYER_HEIGHT, pIsOwnPlayer, pRoomObject, pActiveEffects, pDump, pWalkLoop
 
 on construct me
   SUBTURN_MOVEMENT = getIntVariable("snowwar.object_avatar.subturn_movement")
   pActiveEffects = []
   return 1
-  exit
 end
 
 on deconstruct me
-  repeat with i = 1 to count(pActiveEffects)
-    tEffect = getAt(pActiveEffects, i)
+  repeat with tEffect in pActiveEffects
     tEffect.deconstruct()
   end repeat
   pActiveEffects = []
@@ -20,7 +18,6 @@ on deconstruct me
   me.stopWalkLoop()
   me.removeRoomObject()
   return 1
-  exit
 end
 
 on define me, tGameObject
@@ -46,7 +43,6 @@ on define me, tGameObject
     me.getGameSystem().sendGameSystemEvent(#statusbar_ballcount_update, me.pGameObjectSyncValues[#snowball_count])
   end if
   return 1
-  exit
 end
 
 on update me
@@ -63,7 +59,6 @@ on update me
     pActiveEffects.deleteAt(i)
   end repeat
   return 1
-  exit
 end
 
 on executeGameObjectEvent me, tEvent, tdata
@@ -72,184 +67,144 @@ on executeGameObjectEvent me, tEvent, tdata
   end if
   tstate = me.pGameObjectSyncValues[#activity_state]
   tPossibleStates = [getIntVariable("ACTIVITY_STATE_NORMAL"), getIntVariable("ACTIVITY_STATE_INVINCIBLE_AFTER_STUN")]
-  if (tEvent = #send_set_target_tile) then
-    if not me.getStateAllowsMoving() then
-      return 1
-    end if
-    tWorldLoc = me.getGameSystem().convertTileToWorldCoordinate(tdata[#tile_x], tdata[#tile_y])
-    me.getGameSystem().sendGameEventMessage([#integer: 0, #integer: tWorldLoc[1], #integer: tWorldLoc[2]])
-  else
-    if (tEvent = #send_throw_at_player) then
+  case tEvent of
+    #send_set_target_tile:
+      if not me.getStateAllowsMoving() then
+        return 1
+      end if
+      tWorldLoc = me.getGameSystem().convertTileToWorldCoordinate(tdata[#tile_x], tdata[#tile_y])
+      me.getGameSystem().sendGameEventMessage([#integer: 0, #integer: tWorldLoc[1], #integer: tWorldLoc[2]])
+    #send_throw_at_player:
       if pIsOwnPlayer then
         if (me.pGameObjectSyncValues[#snowball_count] <= 0) then
           me.getGameSystem().sendGameSystemEvent(#statusbar_ballcount_update, me.pGameObjectSyncValues[#snowball_count])
         end if
       end if
       me.getGameSystem().sendGameEventMessage([#integer: 1, #integer: integer(tdata[#target_id]), #integer: tdata[#trajectory]])
-    else
-      if (tEvent = #send_throw_at_loc) then
-        if pIsOwnPlayer then
-          if (me.pGameObjectSyncValues[#snowball_count] <= 0) then
-            me.getGameSystem().sendGameSystemEvent(#statusbar_ballcount_update, me.pGameObjectSyncValues[#snowball_count])
-          end if
-        end if
-        me.getGameSystem().sendGameEventMessage([#integer: 2, #integer: tdata[#targetloc].x, #integer: tdata[#targetloc].y, #integer: tdata.trajectory])
-      else
-        if (tEvent = #send_create_snowball) then
-          if (me.pGameObjectSyncValues[#snowball_count] >= getIntVariable("snowwar.snowball.maximum")) then
-            return 1
-          end if
-          if not me.getStateAllowsMoving() then
-            return 1
-          end if
-          me.getGameSystem().sendGameEventMessage([#integer: 3])
-        else
-          if (tEvent = #substract_ball_count) then
-            if (me.pGameObjectSyncValues[#snowball_count] <= 0) then
-              return 1
-            end if
-            me.pGameObjectSyncValues[#snowball_count] = (me.pGameObjectSyncValues[#snowball_count] - 1)
-            if pIsOwnPlayer then
-              me.getGameSystem().sendGameSystemEvent(#statusbar_ballcount_update, me.pGameObjectSyncValues[#snowball_count])
-            end if
-          else
-            if (tEvent = #increase_ball_count) then
-              me.pGameObjectSyncValues[#snowball_count] = (me.pGameObjectSyncValues[#snowball_count] + 1)
-              if pIsOwnPlayer then
-                me.getGameSystem().sendGameSystemEvent(#statusbar_ballcount_update, me.pGameObjectSyncValues[#snowball_count])
-                playSound("LS-getsnowball")
-              end if
-            else
-              if (tEvent = #set_ball_count) then
-                me.pGameObjectSyncValues[#snowball_count] = tdata[#value]
-                if pIsOwnPlayer then
-                  me.getGameSystem().sendGameSystemEvent(#statusbar_ballcount_update, me.pGameObjectSyncValues[#snowball_count])
-                end if
-              else
-                if (tEvent = #substract_hit_points) then
-                  if (me.pGameObjectSyncValues[#hit_points] <= 0) then
-                    return 1
-                  end if
-                  me.pGameObjectSyncValues[#hit_points] = (me.pGameObjectSyncValues[#hit_points] - 1)
-                  if pIsOwnPlayer then
-                    me.getGameSystem().sendGameSystemEvent(#statusbar_health_update, me.pGameObjectSyncValues[#hit_points])
-                  end if
-                else
-                  if (tEvent = #player_resurrected) then
-                    me.pGameObjectSyncValues[#hit_points] = getIntVariable("snowwar.health.maximum")
-                    if pIsOwnPlayer then
-                      me.getGameSystem().sendGameSystemEvent(#statusbar_health_update, me.pGameObjectSyncValues[#hit_points])
-                      me.getGameSystem().sendGameSystemEvent(#update_game_visuals)
-                    end if
-                    me.startInvincibleAnimation()
-                  else
-                    if (tEvent = #set_target) then
-                      if not me.getStateAllowsMoving() then
-                        return 1
-                      end if
-                      if (me.pGameObjectSyncValues[#activity_state] = 1) then
-                        me.pGameObjectSyncValues[#activity_state] = 0
-                        me.pGameObjectSyncValues[#activity_timer] = 0
-                        me.resetFigureAnimation()
-                        if pIsOwnPlayer then
-                          me.getGameSystem().sendGameSystemEvent(#statusbar_createball_stopped, me.pGameObjectSyncValues[#snowball_count])
-                        end if
-                      end if
-                      me.pGameObjectFinalTarget.setLoc(tdata.x, tdata.y, 0)
-                      me.setGameObjectSyncProperty([#move_target_x: tdata.x, #move_target_y: tdata.y])
-                      if pIsOwnPlayer then
-                        me.stopWalkLoop()
-                        pWalkLoop = playSound("LS-walk-loop-1", VOID, [#infiniteloop: 1])
-                      end if
-                    else
-                      if (tEvent = #set_target_tile) then
-                        nothing()
-                      else
-                        if (tEvent = #start_throw_snowball) then
-                          if not me.getStateAllowsMoving() then
-                            return 1
-                          end if
-                          if (me.pGameObjectSyncValues[#snowball_count] <= 0) then
-                            return 1
-                          end if
-                          me.stopMovement()
-                          me.startThrowAnimation(tdata)
-                        else
-                          if (tEvent = #start_create_snowball) then
-                            if not me.getStateAllowsMoving() then
-                              return 1
-                            end if
-                            if (me.pGameObjectSyncValues[#activity_state] = 1) then
-                              return 1
-                            end if
-                            if (me.pGameObjectSyncValues[#snowball_count] >= getIntVariable("snowwar.snowball.maximum")) then
-                              return 1
-                            end if
-                            me.pGameObjectSyncValues[#activity_state] = 1
-                            me.pGameObjectSyncValues[#activity_timer] = getIntVariable("ACTIVITY_TIMER_CREATING", 20)
-                            me.stopMovement()
-                            me.startCreateSnowballAnimation()
-                            if pIsOwnPlayer then
-                              me.getGameSystem().sendGameSystemEvent(#statusbar_createball_started)
-                            end if
-                          else
-                            if (tEvent = #start_snowball_hit) then
-                              me.startHitAnimation(tdata)
-                            else
-                              if (tEvent = #start_stunned) then
-                                if pIsOwnPlayer then
-                                  me.getGameSystem().sendGameSystemEvent(#statusbar_health_update, 0)
-                                  me.getGameSystem().sendGameSystemEvent(#statusbar_disable_buttons)
-                                end if
-                                me.pGameObjectSyncValues[#activity_state] = 2
-                                me.pGameObjectSyncValues[#activity_timer] = getIntVariable("ACTIVITY_TIMER_STUNNED", 125)
-                                me.stopMovement()
-                                me.startStunnedAnimation(tdata)
-                              else
-                                if (tEvent = #zero_ball_count) then
-                                  me.pGameObjectSyncValues[#snowball_count] = 0
-                                  if pIsOwnPlayer then
-                                    me.getGameSystem().sendGameSystemEvent(#statusbar_ballcount_update, me.pGameObjectSyncValues[#snowball_count])
-                                  end if
-                                else
-                                  if (tEvent = #award_hit_score) then
-                                    me.incrementScoreBy(getIntVariable("snowwar.score.hitaward"))
-                                  else
-                                    if (tEvent = #award_kill_score) then
-                                      me.incrementScoreBy(getIntVariable("snowwar.score.killaward"))
-                                    else
-                                      if (tEvent = #reset_player) then
-                                        me.pGameObjectSyncValues[#player_id] = -1
-                                        return 1
-                                      else
-                                        if (tEvent <> #reset_figure) then
-                                          if (tEvent = #gameend) then
-                                            me.stopWalkLoop()
-                                            return me.resetFigureAnimation()
-                                          else
-                                            put (("* TileWorldMover: UNDEFINED EVENT:" && tEvent) && tdata)
-                                          end if
-                                          exit
-                                        end if
-                                      end if
-                                    end if
-                                  end if
-                                end if
-                              end if
-                            end if
-                          end if
-                        end if
-                      end if
-                    end if
-                  end if
-                end if
-              end if
-            end if
-          end if
+    #send_throw_at_loc:
+      if pIsOwnPlayer then
+        if (me.pGameObjectSyncValues[#snowball_count] <= 0) then
+          me.getGameSystem().sendGameSystemEvent(#statusbar_ballcount_update, me.pGameObjectSyncValues[#snowball_count])
         end if
       end if
-    end if
-  end if
+      me.getGameSystem().sendGameEventMessage([#integer: 2, #integer: tdata[#targetloc].x, #integer: tdata[#targetloc].y, #integer: tdata.trajectory])
+    #send_create_snowball:
+      if (me.pGameObjectSyncValues[#snowball_count] >= getIntVariable("snowwar.snowball.maximum")) then
+        return 1
+      end if
+      if not me.getStateAllowsMoving() then
+        return 1
+      end if
+      me.getGameSystem().sendGameEventMessage([#integer: 3])
+    #substract_ball_count:
+      if (me.pGameObjectSyncValues[#snowball_count] <= 0) then
+        return 1
+      end if
+      me.pGameObjectSyncValues[#snowball_count] = (me.pGameObjectSyncValues[#snowball_count] - 1)
+      if pIsOwnPlayer then
+        me.getGameSystem().sendGameSystemEvent(#statusbar_ballcount_update, me.pGameObjectSyncValues[#snowball_count])
+      end if
+    #increase_ball_count:
+      me.pGameObjectSyncValues[#snowball_count] = (me.pGameObjectSyncValues[#snowball_count] + 1)
+      if pIsOwnPlayer then
+        me.getGameSystem().sendGameSystemEvent(#statusbar_ballcount_update, me.pGameObjectSyncValues[#snowball_count])
+        playSound("LS-getsnowball")
+      end if
+    #set_ball_count:
+      me.pGameObjectSyncValues[#snowball_count] = tdata[#value]
+      if pIsOwnPlayer then
+        me.getGameSystem().sendGameSystemEvent(#statusbar_ballcount_update, me.pGameObjectSyncValues[#snowball_count])
+      end if
+    #substract_hit_points:
+      if (me.pGameObjectSyncValues[#hit_points] <= 0) then
+        return 1
+      end if
+      me.pGameObjectSyncValues[#hit_points] = (me.pGameObjectSyncValues[#hit_points] - 1)
+      if pIsOwnPlayer then
+        me.getGameSystem().sendGameSystemEvent(#statusbar_health_update, me.pGameObjectSyncValues[#hit_points])
+      end if
+    #player_resurrected:
+      me.pGameObjectSyncValues[#hit_points] = getIntVariable("snowwar.health.maximum")
+      if pIsOwnPlayer then
+        me.getGameSystem().sendGameSystemEvent(#statusbar_health_update, me.pGameObjectSyncValues[#hit_points])
+        me.getGameSystem().sendGameSystemEvent(#update_game_visuals)
+      end if
+      me.startInvincibleAnimation()
+    #set_target:
+      if not me.getStateAllowsMoving() then
+        return 1
+      end if
+      if (me.pGameObjectSyncValues[#activity_state] = 1) then
+        me.pGameObjectSyncValues[#activity_state] = 0
+        me.pGameObjectSyncValues[#activity_timer] = 0
+        me.resetFigureAnimation()
+        if pIsOwnPlayer then
+          me.getGameSystem().sendGameSystemEvent(#statusbar_createball_stopped, me.pGameObjectSyncValues[#snowball_count])
+        end if
+      end if
+      me.pGameObjectFinalTarget.setLoc(tdata.x, tdata.y, 0)
+      me.setGameObjectSyncProperty([#move_target_x: tdata.x, #move_target_y: tdata.y])
+      if pIsOwnPlayer then
+        me.stopWalkLoop()
+        pWalkLoop = playSound("LS-walk-loop-1", VOID, [#infiniteloop: 1])
+      end if
+    #set_target_tile:
+      nothing()
+    #start_throw_snowball:
+      if not me.getStateAllowsMoving() then
+        return 1
+      end if
+      if (me.pGameObjectSyncValues[#snowball_count] <= 0) then
+        return 1
+      end if
+      me.stopMovement()
+      me.startThrowAnimation(tdata)
+    #start_create_snowball:
+      if not me.getStateAllowsMoving() then
+        return 1
+      end if
+      if (me.pGameObjectSyncValues[#activity_state] = 1) then
+        return 1
+      end if
+      if (me.pGameObjectSyncValues[#snowball_count] >= getIntVariable("snowwar.snowball.maximum")) then
+        return 1
+      end if
+      me.pGameObjectSyncValues[#activity_state] = 1
+      me.pGameObjectSyncValues[#activity_timer] = getIntVariable("ACTIVITY_TIMER_CREATING", 20)
+      me.stopMovement()
+      me.startCreateSnowballAnimation()
+      if pIsOwnPlayer then
+        me.getGameSystem().sendGameSystemEvent(#statusbar_createball_started)
+      end if
+    #start_snowball_hit:
+      me.startHitAnimation(tdata)
+    #start_stunned:
+      if pIsOwnPlayer then
+        me.getGameSystem().sendGameSystemEvent(#statusbar_health_update, 0)
+        me.getGameSystem().sendGameSystemEvent(#statusbar_disable_buttons)
+      end if
+      me.pGameObjectSyncValues[#activity_state] = 2
+      me.pGameObjectSyncValues[#activity_timer] = getIntVariable("ACTIVITY_TIMER_STUNNED", 125)
+      me.stopMovement()
+      me.startStunnedAnimation(tdata)
+    #zero_ball_count:
+      me.pGameObjectSyncValues[#snowball_count] = 0
+      if pIsOwnPlayer then
+        me.getGameSystem().sendGameSystemEvent(#statusbar_ballcount_update, me.pGameObjectSyncValues[#snowball_count])
+      end if
+    #award_hit_score:
+      me.incrementScoreBy(getIntVariable("snowwar.score.hitaward"))
+    #award_kill_score:
+      me.incrementScoreBy(getIntVariable("snowwar.score.killaward"))
+    #reset_player:
+      me.pGameObjectSyncValues[#player_id] = -1
+      return 1
+    #reset_figure, #gameend:
+      me.stopWalkLoop()
+      return me.resetFigureAnimation()
+    otherwise:
+      put (("* TileWorldMover: UNDEFINED EVENT:" && tEvent) && tdata)
+  end case
 end
 
 on calculateFrameMovement me
@@ -274,14 +229,14 @@ on calculateFrameMovement me
     tDirBody = me.pGameObjectSyncValues[#body_direction]
     if tMoving then
       if (tOrigNextTargetLoc <> me.pGameObjectNextTarget.getLocation()) then
-        pRoomObject.gameObjectRefreshLocation(tOrigTileLocation.x, tOrigTileLocation.y, 0, tDirBody, tDirBody)
-        pRoomObject.gameObjectNewMoveTarget(me.pGameObjectNextTarget.getTileX(), me.pGameObjectNextTarget.getTileY(), 0, tDirBody, tDirBody, "wlk")
+        pRoomObject.gameObjectRefreshLocation(tOrigTileLocation.x, tOrigTileLocation.y, 0.0, tDirBody, tDirBody)
+        pRoomObject.gameObjectNewMoveTarget(me.pGameObjectNextTarget.getTileX(), me.pGameObjectNextTarget.getTileY(), 0.0, tDirBody, tDirBody, "wlk")
       end if
     else
       me.stopWalkLoop()
       me.pGameObjectNextTarget.setLoc(me.pGameObjectLocation.x, me.pGameObjectLocation.y, me.pGameObjectLocation.z)
       me.setGameObjectSyncProperty([#x: me.pGameObjectLocation.x, #y: me.pGameObjectLocation.y, #next_tile_x: me.pGameObjectLocation.getTileX(), #next_tile_y: me.pGameObjectLocation.getTileY()])
-      pRoomObject.gameObjectMoveDone(me.pGameObjectLocation.getTileX(), me.pGameObjectLocation.getTileY(), 0, tDirBody, tDirBody, "std")
+      pRoomObject.gameObjectMoveDone(me.pGameObjectLocation.getTileX(), me.pGameObjectLocation.getTileY(), 0.0, tDirBody, tDirBody, "std")
     end if
   else
     me.stopWalkLoop()
@@ -291,7 +246,6 @@ on calculateFrameMovement me
     return 1
   end if
   me.checkForSnowballCollisions()
-  exit
 end
 
 on reserveSpaceForObject me, tLocX, tLocY
@@ -302,7 +256,6 @@ on reserveSpaceForObject me, tLocX, tLocY
   tWorld.clearObjectFromTileSpace(me.getObjectId())
   tWorld.reserveTileForObject(me.pGameObjectNextTarget.getTileX(), me.pGameObjectNextTarget.getTileY(), me.getObjectId(), 0)
   return 1
-  exit
 end
 
 on activityTimerTriggered me
@@ -321,7 +274,6 @@ on activityTimerTriggered me
     me.resetFigureAnimation()
   end if
   me.pGameObjectSyncValues[#activity_state] = getIntVariable("ACTIVITY_STATE_NORMAL")
-  exit
 end
 
 on calculateMovement me
@@ -428,7 +380,6 @@ on calculateMovement me
     end if
   end if
   return 0
-  exit
 end
 
 on checkForSnowballCollisions me
@@ -443,8 +394,7 @@ on checkForSnowballCollisions me
   end if
   tOwnId = me.getObjectId()
   tlocation = me.getLocation()
-  repeat with i = 1 to count(tBallObjectIdList)
-    tBallObjectId = getAt(tBallObjectIdList, i)
+  repeat with tBallObjectId in tBallObjectIdList
     tBallObject = tGameSystem.getGameObject(tBallObjectId)
     tThrowerId = string(tBallObject.getGameObjectProperty(#int_thrower_id))
     if ((tThrowerId <> tOwnId) and tBallObject.getActive()) then
@@ -461,7 +411,6 @@ on checkForSnowballCollisions me
     end if
   end repeat
   return 1
-  exit
 end
 
 on stopMovement me
@@ -473,9 +422,8 @@ on stopMovement me
     return error(me, "Room object wrapper missing", #stopMovement)
   end if
   tDirBody = me.pGameObjectSyncValues[#body_direction]
-  pRoomObject.gameObjectMoveDone(me.pGameObjectLocation.getTileX(), me.pGameObjectLocation.getTileY(), 0, tDirBody, tDirBody, "std")
+  pRoomObject.gameObjectMoveDone(me.pGameObjectLocation.getTileX(), me.pGameObjectLocation.getTileY(), 0.0, tDirBody, tDirBody, "std")
   return 1
-  exit
 end
 
 on startHitAnimation me, tdata
@@ -491,16 +439,15 @@ on startHitAnimation me, tdata
     return error(me, "Room object missing", #startHitAnimation)
   end if
   if ((tDirection >= 225) or (tDirection <= 45)) then
-    tlocz = (pSprite.locZ + 1)
+    tlocz = (tHumanObject.pSprite.locZ + 1)
   else
-    tlocz = (pSprite.locZ + 1)
+    tlocz = (tHumanObject.pSprite.locZ + 1)
   end if
   tScreenLoc = me.getGameSystem().getWorld().convertWorldToScreenCoordinate(tX, tY, tZ)
   tEffect = createObject(#temp, "Snowwar Hit Animation Class")
   tEffect.define(tScreenLoc, tlocz)
   pActiveEffects.append(tEffect)
   return 1
-  exit
 end
 
 on startThrowAnimation me, tdata
@@ -527,7 +474,6 @@ on startThrowAnimation me, tdata
   end if
   pRoomObject.gameObjectAction("start_throw", tDirection)
   return 1
-  exit
 end
 
 on startCreateSnowballAnimation me
@@ -536,7 +482,6 @@ on startCreateSnowballAnimation me
   end if
   pRoomObject.gameObjectAction("start_create")
   return 1
-  exit
 end
 
 on startStunnedAnimation me, tdata
@@ -545,7 +490,6 @@ on startStunnedAnimation me, tdata
   end if
   pRoomObject.gameObjectAction("start_stunned", tdata)
   return 1
-  exit
 end
 
 on startInvincibleAnimation me
@@ -554,7 +498,6 @@ on startInvincibleAnimation me
   end if
   pRoomObject.gameObjectAction("start_invincible")
   return 1
-  exit
 end
 
 on resetFigureAnimation me
@@ -566,7 +509,6 @@ on resetFigureAnimation me
   end if
   pRoomObject.gameObjectAction("reset_figure")
   return 1
-  exit
 end
 
 on createRoomObject me, tDataStruct
@@ -575,7 +517,6 @@ on createRoomObject me, tDataStruct
     return error(me, "Cannot create roomobject wrapper!", #createRoomObject)
   end if
   return pRoomObject.define(tDataStruct)
-  exit
 end
 
 on removeRoomObject me
@@ -585,7 +526,6 @@ on removeRoomObject me
   pRoomObject.deconstruct()
   pRoomObject = VOID
   return 1
-  exit
 end
 
 on getRoomObjectImage me
@@ -593,14 +533,12 @@ on getRoomObjectImage me
     return 0
   end if
   return pRoomObject.getPicture()
-  exit
 end
 
 on getStateAllowsMoving me
   tstate = me.pGameObjectSyncValues[#activity_state]
   tPossibleStates = [getIntVariable("ACTIVITY_STATE_NORMAL"), getIntVariable("ACTIVITY_STATE_CREATING"), getIntVariable("ACTIVITY_STATE_INVINCIBLE_AFTER_STUN")]
   return (tPossibleStates.findPos(tstate) > 0)
-  exit
 end
 
 on stopWalkLoop me
@@ -609,7 +547,6 @@ on stopWalkLoop me
   end if
   pWalkLoop = VOID
   return 1
-  exit
 end
 
 on incrementScoreBy me, tPoints
@@ -622,5 +559,4 @@ on incrementScoreBy me, tPoints
     me.getGameSystem().sendGameSystemEvent(#personal_score_updated, me.pGameObjectSyncValues[#score])
   end if
   return 1
-  exit
 end
