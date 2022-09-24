@@ -263,6 +263,18 @@ on updateRoomBarFigure me
 end
 
 on eventProcRoomBar me, tEvent, tSprID, tParam
+  case tSprID of
+    "game_rules_image":
+      case tEvent of
+        #mouseUp:
+          return executeMessage(#ig_show_game_rules)
+        #mouseEnter:
+          return executeMessage(#setRollOverInfo, getText("interface_icon_game_rules"))
+        #mouseLeave:
+          return executeMessage(#setRollOverInfo, EMPTY)
+      end case
+  end case
+  
   if (tEvent = #mouseUp) then
     case tSprID of
       "snowwar_button_create":
