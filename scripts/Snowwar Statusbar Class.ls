@@ -258,7 +258,7 @@ end
 on updateRoomBarFigure me
   tSpectator = me.getGameSystem().getSpectatorModeFlag()
   if (not tSpectator and objectExists("Figure_Preview")) then
-    getObject("Figure_Preview").createHumanPartPreview(pBottomBarId, "snowwar_avatar_face", #head)
+    getObject("Figure_Preview").createHumanPartPreview(pBottomBarId, "ownhabbo_icon_image", #head)
   end if
 end
 
