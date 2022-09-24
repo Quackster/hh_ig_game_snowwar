@@ -45,6 +45,13 @@ on handle_msgstruct_objects me, tdata
       end if
     end if
   end repeat
+  tRoomThread = getThread(#room)
+  tRoomComponent = tRoomThread.getComponent()
+  if count(tList) > 0 then
+    repeat with tObj in tList
+      tRoomComponent.createPassiveObject(tObj)
+    end repeat
+  end if
   return me.getGameSystem().getWorld().storeObjects(tList)
 end
 
