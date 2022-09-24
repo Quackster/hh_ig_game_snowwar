@@ -244,6 +244,10 @@ on handle_msgstruct_gamereset me, tMsg
   end repeat
   tdata.addProp(#game_objects, tGameObjects)
   tGameSystem = me.getGameSystem()
+  tHeightMap = tConn.GetStrFrom()
+  tWorldWidth = tHeightMap.getPropRef(#line, 1).length
+  tWorldLength = tHeightMap.count(#line)
+  me.store_heightmap(tHeightMap, tWorldWidth, tWorldLength)
   tGameSystem.clearTurnBuffer()
   tGameSystem.sendGameSystemEvent(#verify_game_object_id_list, tObjectIdList)
   repeat with tGameObject in tdata[#game_objects]
@@ -255,6 +259,19 @@ on handle_msgstruct_gamereset me, tMsg
   end repeat
   tGameSystem.sendGameSystemEvent(#update_game_visuals)
   return tGameSystem.sendGameSystemEvent(#gamereset, tdata)
+end
+
+on store_heightmap(me, tdata, tWorldWidth, tWorldHeight)
+  tRoomComponent = getObject(#room_component)
+  if tRoomComponent = 0 then
+    return(0)
+  end if
+  tRoomComponent.getInterface().getGeometry().loadHeightMap(tdata)
+  tGameSystem = me.getGameSystem()
+  if tGameSystem = 0 then
+    return(0)
+  end if
+  return(tGameSystem.getWorld().storeHeightmap(tdata, tWorldWidth, tWorldHeight))
 end
 
 on handle_msgstruct_gameplayerinfo me, tMsg
