@@ -65,8 +65,8 @@ on Refresh me, tTopic, tdata
       if tAwardScore then
         tGameSystem.executeGameObjectEvent(string(tdata[#int_thrower_id]), #award_kill_score)
       end if
-	otherwise:
-	  return error(me, ((("Undefined event!" && tTopic) && "for") && me.pID), #Refresh)
+    otherwise:
+      return error(me, ((("Undefined event!" && tTopic) && "for") && me.pID), #Refresh)
   end case
   return 1
 end

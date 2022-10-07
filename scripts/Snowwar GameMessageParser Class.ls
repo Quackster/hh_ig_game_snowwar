@@ -11,39 +11,44 @@ on Refresh me, tTopic, tdata
   return 1
 end
 
-on handle_msgstruct_objects me, tdata
+on handle_msgstruct_objects(me, tMsg)
+  tConn = tMsg.connection
   tList = []
-  tCount = tdata.content.line.count
-  repeat with i = 1 to tCount
-    tLine = tdata.content.line[i]
-    if (length(tLine) > 5) then
+  -- tConn.GetIntFrom()
+  tdata = tMsg.content
+  tCount = the number of lines in tdata
+  i = 1
+  repeat while i <= tCount
+    tLine = tdata.getProp(#line, i)
+    if length(tLine) > 5 then
       tObj = [:]
-      tObj[#id] = tLine.word[1]
-      tObj[#class] = tLine.word[2]
-      tObj[#x] = integer(tLine.word[3])
-      tObj[#y] = integer(tLine.word[4])
-      tObj[#h] = integer(tLine.word[5])
-      if (tLine.word.count = 6) then
-        tdir = (integer(tLine.word[6]) mod 8)
-        tObj[#direction] = [tdir, tdir, tdir]
-        tObj[#dimensions] = 0
+      tObj.setAt(#id, tLine.getProp(#word, 1))
+      tObj.setAt(#class, tLine.getProp(#word, 2))
+      tObj.setAt(#x, integer(tLine.getProp(#word, 3)))
+      tObj.setAt(#y, integer(tLine.getProp(#word, 4)))
+      tObj.setAt(#h, integer(tLine.getProp(#word, 5)))
+      if tLine.count(#word) = 6 then
+        tdir = integer(tLine.getProp(#word, 6)) mod 8
+        tObj.setAt(#direction, [tdir, tdir, tdir])
+        tObj.setAt(#dimensions, 0)
       else
-        tWidth = integer(tLine.word[6])
-        tHeight = integer(tLine.word[7])
-        tObj[#dimensions] = [tWidth, tHeight]
-        tObj[#x] = ((tObj[#x] + tObj[#width]) - 1)
-        tObj[#y] = ((tObj[#y] + tObj[#height]) - 1)
+        tWidth = integer(tLine.getProp(#word, 6))
+        tHeight = integer(tLine.getProp(#word, 7))
+        tObj.setAt(#dimensions, [tWidth, tHeight])
+        tObj.setAt(#x, tObj.getAt(#x) + tObj.getAt(#width) - 1)
+        tObj.setAt(#y, tObj.getAt(#y) + tObj.getAt(#height) - 1)
       end if
-      tVarKey = (("snowwar.object_" & tObj[#class]) & ".height")
+      tVarKey = "snowwar.object_" & tObj.getAt(#class) & ".height"
       if variableExists(tVarKey) then
-        tObj[#height] = getIntVariable(tVarKey)
+        tObj.setAt(#height, getIntVariable(tVarKey))
       else
-        tObj[#height] = 0
+        tObj.setAt(#height, 0)
       end if
-      if (tObj[#id] <> EMPTY) then
+      if tObj.getAt(#id) <> "" then
         tList.add(tObj)
       end if
     end if
+    i = 1 + i
   end repeat
   tRoomThread = getThread(#room)
   tRoomComponent = tRoomThread.getComponent()
@@ -52,7 +57,7 @@ on handle_msgstruct_objects me, tdata
       tRoomComponent.createPassiveObject(tObj)
     end repeat
   end if
-  return me.getGameSystem().getWorld().storeObjects(tList)
+  return(me.getGameSystem().getWorld().storeObjects(tList))
 end
 
 on handle_msgstruct_instancelist me, tMsg
@@ -164,9 +169,8 @@ on handle_msgstruct_fullgamestatus me, tMsg
   tConn = tMsg.connection
   tdata = [:]
   tStateInt = tConn.GetIntFrom()
-  tstate = [#created, #started, #finished][tStateInt]
-  tdata.addProp(#state, tstate)
-  tdata.addProp(#time, [#state: tstate, #time_to_next_state: tConn.GetIntFrom(), #state_duration: tConn.GetIntFrom()])
+  tTimeToNextState = tConn.GetIntFrom()
+  tStateDuration = tConn.GetIntFrom()
   tNumObjects = tConn.GetIntFrom()
   tObjectIdList = []
   tGameObjects = []
@@ -180,10 +184,10 @@ on handle_msgstruct_fullgamestatus me, tMsg
   tdata.addProp(#game_objects, tGameObjects)
   tGameSystem.getVarMgr().set(#tournament_flag, tConn.GetBoolFrom())
   tGameSystem.sendGameSystemEvent(#set_number_of_teams, tConn.GetIntFrom())
-  tGameSystem.sendGameSystemEvent(#fullgamestatus_time, tdata[#time])
   tGameSystem.clearTurnBuffer()
   tGameSystem.sendGameSystemEvent(#verify_game_object_id_list, tObjectIdList)
-  repeat with tGameObject in tdata[#game_objects]
+  repeat with i = 1 to count(getAt(tdata, #game_objects))
+    tGameObject = getAt(getAt(tdata, #game_objects), i)
     if (tGameSystem.getGameObject(tGameObject[#id]) = 0) then
       tGameSystem.sendGameSystemEvent(#create_game_object, tGameObject)
       next repeat
@@ -193,6 +197,7 @@ on handle_msgstruct_fullgamestatus me, tMsg
   tGameSystem.sendGameSystemEvent(#update_game_visuals)
   tGameSystem.startTurnManager()
   return me.parse_gamestatus(tConn)
+  exit
 end
 
 on handle_msgstruct_gamestart me, tMsg
@@ -231,7 +236,7 @@ end
 on handle_msgstruct_gamereset me, tMsg
   tConn = tMsg.connection
   tdata = [:]
-  tdata.addProp(#time_until_game_start, tConn.GetIntFrom())
+  -- tdata.addProp(#time_until_game_start, tConn.GetIntFrom())
   tNumObjects = tConn.GetIntFrom()
   tGameObjects = []
   tObjectIdList = []
@@ -257,9 +262,9 @@ on handle_msgstruct_gamereset me, tMsg
     end if
     tGameSystem.sendGameSystemEvent(#update_game_object, tGameObject)
   end repeat
-  tGameSystem.sendGameSystemEvent(#update_game_visuals)
   tTeamNumber = tConn.GetIntFrom()
   tGameSystem.sendGameSystemEvent(#set_number_of_teams, tTeamNumber)
+  tGameSystem.sendGameSystemEvent(#update_game_visuals)
   return tGameSystem.sendGameSystemEvent(#gamereset, tdata)
 end
 
@@ -457,8 +462,9 @@ on parse_event me, tConn
       tIntKeyList = [#int_machine_id]
     12:
       tIntKeyList = [#int_player_id, #int_machine_id]
+    otherwise:
+      return error(me, "Undefined event sent by server, parsing cannot continue!", #handle_gamestatus)
   end case
-  return error(me, "Undefined event sent by server, parsing cannot continue!", #handle_gamestatus)
   if listp(tIntKeyList) then
     tEvent = [#event_type: tEventType]
     repeat with tKey in tIntKeyList

@@ -1,136 +1,141 @@
-property pRoomIndex
+property pNumTeams, pRoomComponentObj, pFigureSystemObj, pHiliterObj
 
 on construct me
+  pRoomComponentObj = getObject(#room_component)
+  if (pRoomComponentObj = 0) then
+    return error(me, "Avatar manager failed to initialize", #construct)
+  end if
+  registerMessage(#create_user, me.getID(), #setAvatarEventListener)
   return 1
 end
 
 on deconstruct me
-  me.removeRoomObject()
-  pRoomComponentObj = VOID
-  if not getObject(#session).exists("user_index") then
-    return 1
-  end if
-  if (pRoomIndex = getObject(#session).GET("user_index")) then
-    if getObject(#session).exists("user_index") then
-      getObject(#session).Remove("user_index")
-    end if
-    if getObject(#session).exists("user_game_index") then
-      getObject(#session).Remove("user_game_index")
-    end if
-  end if
+  me.displayAvatarInfo(0)
+  unregisterMessage(#create_user, me.getID())
+  getObject(#session).Remove("game_number_of_teams")
   return 1
 end
 
-on define me, tdata
-  if (tdata[#room_index] < 0) then
-    return error(me, ("Invalid room index for avatar:" && tdata), #define)
-  end if
-  pRoomIndex = string(tdata[#room_index])
-  if (tdata[#name] = getObject(#session).GET(#userName)) then
-    getObject(#session).set("user_index", pRoomIndex)
-    getObject(#session).set("user_game_index", tdata[#id])
-  end if
-  return me.createRoomObject(tdata)
+on Refresh me, tTopic, tdata
+  case tTopic of
+    #set_number_of_teams:
+      pNumTeams = tdata
+      getObject(#session).set("game_number_of_teams", tdata)
+    #snowwar_event_2:
+      me.getGameSystem().executeGameObjectEvent(tdata[#id], #set_target, tdata)
+    #snowwar_event_3:
+      me.getGameSystem().executeGameObjectEvent(tdata[#id], #start_throw_snowball, tdata)
+      me.getGameSystem().executeGameObjectEvent(tdata[#id], #substract_ball_count)
+    #snowwar_event_4:
+      me.getGameSystem().executeGameObjectEvent(tdata[#id], #start_throw_snowball, tdata)
+      me.getGameSystem().executeGameObjectEvent(tdata[#id], #substract_ball_count)
+    #snowwar_event_5:
+      playSound(("LS-hit-" & random(2)))
+      tGameSystem = me.getGameSystem()
+      tGameSystem.executeGameObjectEvent(tdata[#id], #substract_hit_points)
+      if (pNumTeams = 1) then
+        tAwardScore = 1
+      else
+        tThisTeam = tGameSystem.getGameObjectProperty(tdata[#id], #team_id)
+        tThatTeam = tGameSystem.getGameObjectProperty(string(tdata[#int_thrower_id]), #team_id)
+        if (tThisTeam <> tThatTeam) then
+          tAwardScore = 1
+        end if
+      end if
+      if tAwardScore then
+        tGameSystem.executeGameObjectEvent(string(tdata[#int_thrower_id]), #award_hit_score)
+      end if
+    #snowwar_event_7:
+      me.getGameSystem().executeGameObjectEvent(tdata[#id], #start_create_snowball)
+    #snowwar_event_9:
+      tGameSystem = me.getGameSystem()
+      tHitDirection8 = tGameSystem.getGeometry().direction360to8(tdata[#hit_direction])
+      playSound("LS-hit-3")
+      tGameSystem.executeGameObjectEvent(tdata[#id], #start_stunned, [#hit_direction: tHitDirection8])
+      tGameSystem.executeGameObjectEvent(tdata[#id], #zero_ball_count)
+      if (pNumTeams = 1) then
+        tAwardScore = 1
+      else
+        tThisTeam = tGameSystem.getGameObjectProperty(tdata[#id], #team_id)
+        tThatTeam = tGameSystem.getGameObjectProperty(string(tdata[#int_thrower_id]), #team_id)
+        if (tThisTeam <> tThatTeam) then
+          tAwardScore = 1
+        end if
+      end if
+      if tAwardScore then
+        tGameSystem.executeGameObjectEvent(string(tdata[#int_thrower_id]), #award_kill_score)
+      end if
+    otherwise:
+      return error(me, ((("Undefined event!" && tTopic) && "for") && me.pID), #Refresh)
+  end case
+  return 1
 end
 
-on gameObjectMoveDone me, tX, tY, tH, tDirHead, tDirBody, tAction
-  tUserObject = me.getRoomObject()
-  if (tUserObject = 0) then
+on setAvatarEventListener me, tName, tID
+  tRoom = getObject(#room_component)
+  if (tRoom = 0) then
     return 0
   end if
-  return tUserObject.gameObjectMoveDone(tX, tY, tH, tDirHead, tDirBody, tAction)
-end
-
-on gameObjectAction me, tAction, tdata
-  tUserObject = me.getRoomObject()
-  if (tUserObject = 0) then
+  tObject = tRoom.getUserObject(tID)
+  if (tObject = 0) then
     return 0
   end if
-  return tUserObject.gameObjectAction(tAction, tdata)
+  call(#setAvatarEventListener, tObject, me.getID())
+  return 1
 end
 
-on gameObjectRefreshLocation me, tX, tY, tH, tDirHead, tDirBody
-  tUserObject = me.getRoomObject()
-  if (tUserObject = 0) then
+on eventProcSnowwarUserRollOver me, tEvent, tID, tProp
+  tRoom = getObject(#room_component)
+  if (tRoom = 0) then
     return 0
   end if
-  return tUserObject.resetValues(tX, tY, tH, tDirHead, tDirBody)
-end
-
-on gameObjectNewMoveTarget me, tX, tY, tH, tDirHead, tDirBody, tAction
-  tUserObject = me.getRoomObject()
-  if (tUserObject = 0) then
+  tObject = tRoom.getUserObject(tID)
+  if (tObject = 0) then
     return 0
   end if
-  return tUserObject.gameObjectNewMoveTarget(tX, tY, tH, tDirHead, tDirBody, tAction)
-end
-
-on getPicture me
-  tUserObject = me.getRoomObject()
-  if (tUserObject = 0) then
-    return 0
-  end if
-  return tUserObject.getPicture()
-end
-
-on getRoomObject me
-  tRoomComponentObj = getObject(#room_component)
-  if (tRoomComponentObj = 0) then
-    return error(me, "Room component unavailable!", #getRoomObject)
-  end if
-  return tRoomComponentObj.getUserObject(pRoomIndex)
-end
-
-on createRoomObject me, tdata
-  tRoomComponentObj = getObject(#room_component)
-  if (tRoomComponentObj = 0) then
-    return error(me, "Room component unavailable!", #createRoomObject)
-  end if
-  tFigureSystemObj = getObject("Figure_System")
-  if (tFigureSystemObj = 0) then
-    return error(me, "Figure system unavailable!", #createRoomObject)
-  end if
-  tAvatarStruct = tdata.duplicate()
-  tAvatarStruct[#id] = pRoomIndex
-  tAvatarStruct.setaProp(#direction, [tdata[#dirBody], tdata[#dirBody]])
-  tClassID = "snowwar.object_avatar.roomobject.class"
-  tPlayerClass = getVariable(tClassID)
-  tClassContainer = tRoomComponentObj.getClassContainer()
-  if (tClassContainer = 0) then
-    return error(me, "Avatar manager failed to initialize", #createRoomObject)
-  end if
-  tClassContainer.set(tClassID, tPlayerClass)
-  tAvatarStruct.setaProp(#class, tClassID)
-  tAvatarStruct.setaProp(#x, tdata[#next_tile_x])
-  tAvatarStruct.setaProp(#y, tdata[#next_tile_y])
-  if (tdata[#next_tile_z] = VOID) then
-    tAvatarStruct.setaProp(#h, 0.0)
+  tGameSystem = me.getGameSystem()
+  if (tEvent = #mouseEnter) then
+    tName = tObject.getName()
+    tOwnPlayer = 0
+    if not tGameSystem.getSpectatorModeFlag() then
+      if (tName = getObject(#session).GET(#userName)) then
+        tOwnPlayer = 1
+      else
+        if (tGameSystem.getGamestatus() = #game_started) then
+          tMemberNum = getmemnum("sw_crosshair")
+          tMemberNum2 = getmemnum("sw_crosshair.mask")
+          if ((tMemberNum <> 0) and (tMemberNum2 <> 0)) then
+            cursor([tMemberNum, tMemberNum2])
+          end if
+        end if
+      end if
+    end if
+    tloc = tObject.getLocation()
+    tloc = tGameSystem.convertTileToWorldCoordinate(tloc[1], tloc[2], 0)
+    tloc = tGameSystem.convertWorldToScreenCoordinate(tloc[1], tloc[2], 0)
+    tScore = tGameSystem.getGameObjectProperty(tObject.getAvatarId(), #score)
+    return me.displayAvatarInfo(tName, tScore, tObject.getTeamId(), tloc, tOwnPlayer)
   else
-    tAvatarStruct.setaProp(#h, tdata[#next_tile_z])
-  end if
-  if (tdata[#figure] = EMPTY) then
-    return error(me, "Figure not found in human data, server probably didn't send it in GAMERESET (249)", #createRoomObject)
-  end if
-  tAvatarStruct.setaProp(#custom, tdata[#mission])
-  tFigure = tFigureSystemObj.parseFigure(tdata[#figure], tdata[#sex], "user")
-  tAvatarStruct.setaProp(#figure, tFigure)
-  if not tRoomComponentObj.validateUserObjects(tAvatarStruct) then
-    return error(me, "Room couldn't create avatar!", #createRoomObject)
-  else
-    return 1
+    setcursor(0)
+    return me.displayAvatarInfo(0)
   end if
 end
 
-on removeRoomObject me
-  tRoomComponentObj = getObject(#room_component)
-  if (tRoomComponentObj = 0) then
-    return error(me, "Room component unavailable!", #removeRoomObject)
+on displayAvatarInfo me, tName, tScore, tTeamId, tloc, tOwnPlayer
+  if stringp(tName) then
+    if (pHiliterObj <> VOID) then
+      return 1
+    end if
+    pHiliterObj = createObject(#temp, getClassVariable("snowwar.object_avatar.roomobject.hiliter.class"))
+    if (pHiliterObj = 0) then
+      return 0
+    end if
+    return pHiliterObj.display(tName, tScore, tTeamId, tloc, tOwnPlayer)
+  else
+    if (pHiliterObj <> VOID) then
+      pHiliterObj.hide()
+    end if
+    pHiliterObj = VOID
   end if
-  if (pRoomIndex = VOID) then
-    return 0
-  end if
-  if not tRoomComponentObj.userObjectExists(pRoomIndex) then
-    return 1
-  end if
-  return tRoomComponentObj.removeUserObject(pRoomIndex)
+  return 1
 end

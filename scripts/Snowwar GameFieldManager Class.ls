@@ -21,8 +21,9 @@ on Refresh me, tTopic, tdata
       me.getGameSystem().executeGameObjectEvent(string(tdata[#int_machine_id]), #add_snowball)
     #snowwar_event_12:
       return me.moveBallsToUser(string(tdata[#int_machine_id]), string(tdata[#int_player_id]))
+    otherwise:
+      return error(me, ((("Undefined event!" && tTopic) && "for") && me.pID), #Refresh)
   end case
-  return error(me, ((("Undefined event!" && tTopic) && "for") && me.pID), #Refresh)
   return 1
 end
 

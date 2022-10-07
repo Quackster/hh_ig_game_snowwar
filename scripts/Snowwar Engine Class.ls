@@ -1,6 +1,19 @@
 property pObjectCache
 
 on construct me
+  tSetName = "human.partset.head.sh"
+  tPartList = []
+  if variableExists(tSetName) then
+    tPartList = getVariable(tSetName)
+    if (ilk(tPartList) <> #list) then
+      tPartList = []
+    else
+      tPartList = tPartList.duplicate()
+    end if
+  end if
+  tPartList.add("bd")
+  tPartList.add("sh")
+  setVariable("snowwar.human.parts.sh", tPartList)
   return 1
 end
 
@@ -28,8 +41,9 @@ on Refresh me, tTopic, tdata
       return me.createSnowballGameObject(tdata)
     #world_ready:
       return me.createStoredObjects()
+    otherwise:
+      return error(me, ((("Undefined event!" && tTopic) && "for") && me.pID), #Refresh)
   end case
-  return error(me, ((("Undefined event!" && tTopic) && "for") && me.pID), #Refresh)
 end
 
 on createStoredObjects me
