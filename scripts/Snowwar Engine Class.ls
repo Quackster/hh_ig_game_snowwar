@@ -41,8 +41,9 @@ on Refresh me, tTopic, tdata
       return me.createSnowballGameObject(tdata)
     #world_ready:
       return me.createStoredObjects()
+    otherwise:
+      return error(me, ((("Undefined event!" && tTopic) && "for") && me.pID), #Refresh)
   end case
-  return error(me, ((("Undefined event!" && tTopic) && "for") && me.pID), #Refresh)
 end
 
 on createStoredObjects me
