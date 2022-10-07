@@ -11,11 +11,13 @@ on Refresh me, tTopic, tdata
   return 1
 end
 
-on handle_msgstruct_objects me, tdata
+on handle_msgstruct_objects me, tMsg
+  tConn = tMsg.connection
   tList = []
-  tCount = tdata.content.line.count
+  tdata = tMsg.content
+  tCount = the number of lines in tdata
   repeat with i = 1 to tCount
-    tLine = tdata.content.line[i]
+    tLine = tdata.line[i]
     if (length(tLine) > 5) then
       tObj = [:]
       tObj[#id] = tLine.word[1]
@@ -47,7 +49,7 @@ on handle_msgstruct_objects me, tdata
   end repeat
   tRoomThread = getThread(#room)
   tRoomComponent = tRoomThread.getComponent()
-  if count(tList) > 0 then
+  if (count(tList) > 0) then
     repeat with tObj in tList
       tRoomComponent.createPassiveObject(tObj)
     end repeat
@@ -231,7 +233,6 @@ end
 on handle_msgstruct_gamereset me, tMsg
   tConn = tMsg.connection
   tdata = [:]
-  tdata.addProp(#time_until_game_start, tConn.GetIntFrom())
   tNumObjects = tConn.GetIntFrom()
   tGameObjects = []
   tObjectIdList = []
@@ -257,9 +258,9 @@ on handle_msgstruct_gamereset me, tMsg
     end if
     tGameSystem.sendGameSystemEvent(#update_game_object, tGameObject)
   end repeat
-  tGameSystem.sendGameSystemEvent(#update_game_visuals)
   tTeamNumber = tConn.GetIntFrom()
   tGameSystem.sendGameSystemEvent(#set_number_of_teams, tTeamNumber)
+  tGameSystem.sendGameSystemEvent(#update_game_visuals)
   return tGameSystem.sendGameSystemEvent(#gamereset, tdata)
 end
 

@@ -1,6 +1,19 @@
 property pObjectCache
 
-on construct me
+on construct me  
+  tSetName = "human.partset.head.sh"
+  tPartList = []
+  if variableExists(tSetName) then
+    tPartList = getVariable(tSetName)
+    if (ilk(tPartList) <> #list) then
+      tPartList = []
+    else
+      tPartList = tPartList.duplicate()
+    end if
+  end if
+  tPartList.add("bd")
+  tPartList.add("sh")
+  setVariable("snowwar.human.parts.sh", tPartList)
   return 1
 end
 
