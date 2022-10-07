@@ -47,7 +47,7 @@ on createRoomObject me, tdata
     return error(me, "Room class container not found!", #createRoomObject)
   end if
   tClassContainer.set(tdata["class"], getClassVariable("snowwar.object_snowball_machine.roomobject.class"))
-  return tRoomComponent.validateActiveObjects(tdata)
+  return tRoomComponent.createActiveObject(tdata)
 end
 
 on getRoomObject me
