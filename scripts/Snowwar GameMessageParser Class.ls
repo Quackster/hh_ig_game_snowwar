@@ -186,8 +186,7 @@ on handle_msgstruct_fullgamestatus me, tMsg
   tGameSystem.sendGameSystemEvent(#set_number_of_teams, tConn.GetIntFrom())
   tGameSystem.clearTurnBuffer()
   tGameSystem.sendGameSystemEvent(#verify_game_object_id_list, tObjectIdList)
-  repeat with i = 1 to count(getAt(tdata, #game_objects))
-    tGameObject = getAt(getAt(tdata, #game_objects), i)
+  repeat with tGameObject in tdata[#game_objects]
     if (tGameSystem.getGameObject(tGameObject[#id]) = 0) then
       tGameSystem.sendGameSystemEvent(#create_game_object, tGameObject)
       next repeat
