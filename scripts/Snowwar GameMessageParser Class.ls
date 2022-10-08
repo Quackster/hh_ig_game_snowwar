@@ -11,53 +11,50 @@ on Refresh me, tTopic, tdata
   return 1
 end
 
-on handle_msgstruct_objects(me, tMsg)
+on handle_msgstruct_objects me, tMsg
   tConn = tMsg.connection
   tList = []
-  -- tConn.GetIntFrom()
   tdata = tMsg.content
   tCount = the number of lines in tdata
-  i = 1
-  repeat while i <= tCount
-    tLine = tdata.getProp(#line, i)
-    if length(tLine) > 5 then
+  repeat with i = 1 to tCount
+    tLine = tdata.line[i]
+    if (length(tLine) > 5) then
       tObj = [:]
-      tObj.setAt(#id, tLine.getProp(#word, 1))
-      tObj.setAt(#class, tLine.getProp(#word, 2))
-      tObj.setAt(#x, integer(tLine.getProp(#word, 3)))
-      tObj.setAt(#y, integer(tLine.getProp(#word, 4)))
-      tObj.setAt(#h, integer(tLine.getProp(#word, 5)))
-      if tLine.count(#word) = 6 then
-        tdir = integer(tLine.getProp(#word, 6)) mod 8
-        tObj.setAt(#direction, [tdir, tdir, tdir])
-        tObj.setAt(#dimensions, 0)
+      tObj[#id] = tLine.word[1]
+      tObj[#class] = tLine.word[2]
+      tObj[#x] = integer(tLine.word[3])
+      tObj[#y] = integer(tLine.word[4])
+      tObj[#h] = integer(tLine.word[5])
+      if (tLine.word.count = 6) then
+        tdir = (integer(tLine.word[6]) mod 8)
+        tObj[#direction] = [tdir, tdir, tdir]
+        tObj[#dimensions] = 0
       else
-        tWidth = integer(tLine.getProp(#word, 6))
-        tHeight = integer(tLine.getProp(#word, 7))
-        tObj.setAt(#dimensions, [tWidth, tHeight])
-        tObj.setAt(#x, tObj.getAt(#x) + tObj.getAt(#width) - 1)
-        tObj.setAt(#y, tObj.getAt(#y) + tObj.getAt(#height) - 1)
+        tWidth = integer(tLine.word[6])
+        tHeight = integer(tLine.word[7])
+        tObj[#dimensions] = [tWidth, tHeight]
+        tObj[#x] = ((tObj[#x] + tObj[#width]) - 1)
+        tObj[#y] = ((tObj[#y] + tObj[#height]) - 1)
       end if
-      tVarKey = "snowwar.object_" & tObj.getAt(#class) & ".height"
+      tVarKey = (("snowwar.object_" & tObj[#class]) & ".height")
       if variableExists(tVarKey) then
-        tObj.setAt(#height, getIntVariable(tVarKey))
+        tObj[#height] = getIntVariable(tVarKey)
       else
-        tObj.setAt(#height, 0)
+        tObj[#height] = 0
       end if
-      if tObj.getAt(#id) <> "" then
+      if (tObj[#id] <> EMPTY) then
         tList.add(tObj)
       end if
     end if
-    i = 1 + i
   end repeat
   tRoomThread = getThread(#room)
   tRoomComponent = tRoomThread.getComponent()
-  if count(tList) > 0 then
+  if (count(tList) > 0) then
     repeat with tObj in tList
       tRoomComponent.createPassiveObject(tObj)
     end repeat
   end if
-  return(me.getGameSystem().getWorld().storeObjects(tList))
+  return me.getGameSystem().getWorld().storeObjects(tList)
 end
 
 on handle_msgstruct_instancelist me, tMsg

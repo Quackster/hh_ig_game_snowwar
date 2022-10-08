@@ -1,0 +1,1 @@
+xcopy hh_ig_game_snowwar.cst hh_ig_game_snowwar.cct /y
