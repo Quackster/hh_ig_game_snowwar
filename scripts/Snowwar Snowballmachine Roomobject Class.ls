@@ -15,11 +15,11 @@ on setFrame me, tValue
   end if
   tsprite = me.pSprList[1]
   tName = tsprite.member.name
-  tName = (tName.char[1] & tValue)
+  tName = tName.char[1..length(tName) - 1] & tValue
   tsprite.member = member(getmemnum(tName))
   tsprite = me.pSprList[2]
   tName = tsprite.member.name
-  tName = (tName.char[1] & "0")
+  tName = tName.char[1..length(tName) - 1] & "0"
   tsprite.member = member(getmemnum(tName))
   return 1
 end
@@ -27,7 +27,7 @@ end
 on animate me
   tsprite = me.pSprList[2]
   tName = tsprite.member.name
-  tName = (tName.char[1] & "1")
+  tName = tName.char[1..length(tName) - 1] & "1"
   tsprite.member = member(getmemnum(tName))
   return 1
 end
