@@ -114,7 +114,7 @@ on createRoomObject me, tdata
   tAvatarStruct.setaProp(#custom, tdata[#mission])
   tFigure = tFigureSystemObj.parseFigure(tdata[#figure], tdata[#sex], "user")
   tAvatarStruct.setaProp(#figure, tFigure)
-  if not tRoomComponentObj.validateUserObjects(tAvatarStruct) then
+  if not tRoomComponentObj.createUserObject(tAvatarStruct) then
     return error(me, "Room couldn't create avatar!", #createRoomObject)
   else
     return 1
