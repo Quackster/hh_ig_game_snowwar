@@ -76,7 +76,6 @@ on handle_msgstruct_instancelist me, tMsg
     tResult.addProp(string(tInstance[#id]), tInstance)
   end repeat
   return me.getGameSystem().sendGameSystemEvent(#instancelist, tResult)
-  return tResult
 end
 
 on handle_msgstruct_gameinstance me, tMsg
@@ -193,7 +192,6 @@ on handle_msgstruct_fullgamestatus me, tMsg
   tGameSystem.sendGameSystemEvent(#update_game_visuals)
   tGameSystem.startTurnManager()
   return me.parse_gamestatus(tConn)
-  exit
 end
 
 on handle_msgstruct_gamestart me, tMsg
@@ -264,7 +262,7 @@ on handle_msgstruct_gamereset me, tMsg
   return tGameSystem.sendGameSystemEvent(#gamereset, tdata)
 end
 
-on store_heightmap(me, tdata, tWorldWidth, tWorldHeight)
+on store_heightmap me, tdata, tWorldWidth, tWorldHeight
   tRoomComponent = getObject(#room_component)
   if tRoomComponent = 0 then
     return(0)

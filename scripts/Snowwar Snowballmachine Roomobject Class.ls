@@ -51,5 +51,4 @@ on select me
   else
     return tFramework.executeGameObjectEvent(getObject(#session).GET("user_game_index"), #send_set_target_tile, [#tile_x: (me.pLocX + 1), #tile_y: me.pLocY])
   end if
-  return 0
 end

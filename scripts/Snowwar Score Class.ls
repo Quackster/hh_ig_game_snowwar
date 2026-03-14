@@ -1,4 +1,4 @@
-property pTeamCount, pTeamScoreCache, pOwnScoreWindowId, pTeamScoreWindowId, pTimeWindowId, pTimeOutID, pBuffer, pTimerEndTime, pTimerDurationSec, pCountdownObjId
+property pTeamCount, pTeamScoreCache, pOwnScoreWindowId, pTeamScoreWindowId, pTimeWindowId, pTimeOutID, pBuffer, pTimerEndTime, pTimerDurationSec, pCountdownObjId, pFinalScoresObjId
 
 on construct me
   pTeamScoreCache = []

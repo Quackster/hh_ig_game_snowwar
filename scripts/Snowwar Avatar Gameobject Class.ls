@@ -149,7 +149,7 @@ on executeGameObjectEvent me, tEvent, tdata
         pWalkLoop = playSound("LS-walk-loop-1", VOID, [#infiniteloop: 1])
       end if
     #set_target_tile:
-      nothing()
+      return 1
     #start_throw_snowball:
       if not me.getStateAllowsMoving() then
         return 1

@@ -26,9 +26,18 @@ on OnLoadStage me, i_sName
 end
 
 on OnJoin me
+  return 1
 end
 
 on OnLeave me
+  tRoomInt = getObject(#room_interface)
+  if (tRoomInt <> 0) then
+    tRoomInt.hideArrowHiliter()
+  end if
+  if (pGameSystem <> 0) then
+    pGameSystem.sendGameSystemEvent(#gameend)
+  end if
+  return 1
 end
 
 on OnEvent me, tEvent, tdata

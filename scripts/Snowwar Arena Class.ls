@@ -14,6 +14,7 @@ end
 on deconstruct me
   unregisterMessage(#create_user, me.getID())
   unregisterMessage(#game_started, me.getID())
+  unregisterMessage(#spectatorMode_off, me.getID())
   executeMessage(#gamesystem_removefacade, getVariable("snowwar.gamesystem.id"))
   executeMessage(#resume_messeger_update)
   return 1

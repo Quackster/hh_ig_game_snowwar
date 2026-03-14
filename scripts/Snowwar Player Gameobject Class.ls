@@ -7,7 +7,7 @@ on deconstruct me
   return 1
 end
 
-on define(me, tGameObject)
+on define me, tGameObject
   executeMessage(#ig_store_gameplayer_info, tGameObject)
   return 1
 end

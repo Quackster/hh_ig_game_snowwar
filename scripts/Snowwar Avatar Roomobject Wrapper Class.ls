@@ -6,7 +6,6 @@ end
 
 on deconstruct me
   me.removeRoomObject()
-  pRoomComponentObj = VOID
   if not getObject(#session).exists("user_index") then
     return 1
   end if
@@ -86,6 +85,9 @@ on createRoomObject me, tdata
   if tRoomComponentObj = 0 then
     return error(me, "Room component unavailable!", #createRoomObject)
   end if
+  if tRoomComponentObj.userObjectExists(pRoomIndex) then
+    return 1
+  end if
   tFigureSystemObj = getObject("Figure_System")
   if tFigureSystemObj = 0 then
     return error(me, "Figure system unavailable!", #createRoomObject)
@@ -112,6 +114,8 @@ on createRoomObject me, tdata
     return error(me, "Figure not found in human data, server probably didn't send it in GAMERESET (249)", #createRoomObject)
   end if
   tAvatarStruct.setaProp(#custom, tdata[#mission])
+  tAvatarStruct.setaProp(#sex, tdata[#sex])
+  tAvatarStruct.setaProp(#teamId, tdata[#team_id])
   tFigure = tFigureSystemObj.parseFigure(tdata[#figure], tdata[#sex], "user")
   tAvatarStruct.setaProp(#figure, tFigure)
   if not tRoomComponentObj.createUserObject(tAvatarStruct) then

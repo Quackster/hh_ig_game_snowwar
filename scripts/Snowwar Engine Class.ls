@@ -25,9 +25,7 @@ end
 on Refresh me, tTopic, tdata
   case tTopic of
     #gameend:
-      if getObject(#session).exists("user_game_index") then
-        me.getGameSystem().executeGameObjectEvent(getObject(#session).GET("user_game_index"), #gameend)
-      end if
+      return me.getGameSystem().executeGameObjectEvent(#all, #gameend)
     #update_game_object:
       return me.updateGameObject(tdata)
     #verify_game_object_id_list:
