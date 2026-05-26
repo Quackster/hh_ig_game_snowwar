@@ -1,15 +1,37 @@
-property pRoomGeometry, pMouseClickTime
+property pRoomGeometry, pMouseClickTime, pActiveEffects
 
 on construct me
+  pActiveEffects = []
   me.registerEventProc(1)
   return 1
 end
 
 on deconstruct me
   me.registerEventProc(0)
+  repeat with tEffect in pActiveEffects
+    tEffect.deconstruct()
+  end repeat
+  pActiveEffects = []
+  removeUpdate(me.getID())
   if managerExists(#sound_manager) then
     stopAllSounds()
   end if
+  return 1
+end
+
+on update me
+  if (pActiveEffects.count = 0) then
+    removeUpdate(me.getID())
+    return 0
+  end if
+  repeat with i = pActiveEffects.count down to 1
+    tEffect = pActiveEffects[i]
+    if not tEffect.pActive then
+      pActiveEffects.deleteAt(i)
+    else
+      tEffect.update()
+    end if
+  end repeat
   return 1
 end
 
@@ -17,6 +39,8 @@ on Refresh me, tTopic, tdata
   case tTopic of
     #objects_ready:
       me.processRoomReady()
+    #snowwar_event_6:
+      return me.startSnowballHit(tdata)
     #snowwar_event_11:
       me.getGameSystem().executeGameObjectEvent(string(tdata[#int_machine_id]), #add_snowball)
     #snowwar_event_12:
@@ -24,6 +48,26 @@ on Refresh me, tTopic, tdata
     otherwise:
       return error(me, ((("Undefined event!" && tTopic) && "for") && me.pID), #Refresh)
   end case
+  return 1
+end
+
+on startSnowballHit me, tdata
+  tGameSystem = me.getGameSystem()
+  if (tGameSystem = 0) then
+    return 0
+  end if
+  tWorld = tGameSystem.getWorld()
+  if (tWorld = 0) then
+    return 0
+  end if
+  playSound("LS-miss")
+  tScreenLoc = tWorld.convertWorldToScreenCoordinate(tdata[#x], tdata[#y], 0)
+  tEffect = createObject(#temp, "Snowwar Hit Animation Class")
+  tEffect.define(tScreenLoc, (tScreenLoc[3] + 1))
+  if (pActiveEffects.count = 0) then
+    receiveUpdate(me.getID())
+  end if
+  pActiveEffects.append(tEffect)
   return 1
 end
 

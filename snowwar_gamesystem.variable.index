@@ -9,7 +9,7 @@ snowwar_gamesystem.processors = [#engine, #players, #gamefield, #gamemessagepars
 
 # define processor classes and messages to listen to
 snowwar_gamesystem.engine.processor.class = [ "Snowwar Engine Class"]
-snowwar_gamesystem.engine.processor.updates = [#create_game_object, #update_game_object, #remove_game_object, #verify_game_object_id_list, #snowwar_event_0, #snowwar_event_1, #snowwar_event_8, #gameend, #world_ready]
+snowwar_gamesystem.engine.processor.updates = [#create_game_object, #update_game_object, #remove_game_object, #verify_game_object_id_list, #snowwar_event_0, #snowwar_event_1, #snowwar_event_8, #snowwar_event_10, #gameend, #world_ready]
 
 # AVATARMANAGER processor handles actions that avatars do.
 
@@ -21,7 +21,7 @@ snowwar_gamesystem.players.processor.updates = [#set_number_of_teams, #snowwar_e
 
 # define processor classes and messages to listen to
 snowwar_gamesystem.gamefield.processor.class = ["Snowwar GameFieldManager Class"]
-snowwar_gamesystem.gamefield.processor.updates = [#objects_ready, #snowwar_event_11, #snowwar_event_12]
+snowwar_gamesystem.gamefield.processor.updates = [#objects_ready, #snowwar_event_6, #snowwar_event_11, #snowwar_event_12]
 
 # STATUSBAR processor handles statusbar indicators and buttons.
 

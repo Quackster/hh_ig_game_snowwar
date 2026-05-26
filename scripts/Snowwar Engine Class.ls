@@ -37,6 +37,8 @@ on Refresh me, tTopic, tdata
     #snowwar_event_8:
       playSound("LS-throw")
       return me.createSnowballGameObject(tdata)
+    #snowwar_event_10:
+      return 1
     #world_ready:
       return me.createStoredObjects()
     otherwise:

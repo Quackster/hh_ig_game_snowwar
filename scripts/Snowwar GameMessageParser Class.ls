@@ -20,6 +20,7 @@ end
 on handle_msgstruct_objects me, tMsg
   tConn = tMsg.connection
   tList = []
+  tConn.GetIntFrom()
   tdata = tMsg.content
   tCount = the number of lines in tdata
   repeat with i = 1 to tCount
@@ -171,8 +172,10 @@ on handle_msgstruct_fullgamestatus me, tMsg
   tConn = tMsg.connection
   tdata = [:]
   tStateInt = tConn.GetIntFrom()
+  tstate = [#created, #started, #finished][tStateInt]
   tTimeToNextState = tConn.GetIntFrom()
   tStateDuration = tConn.GetIntFrom()
+  tdata.addProp(#time, [#state: tstate, #time_to_next_state: tTimeToNextState, #state_duration: tStateDuration])
   tNumObjects = tConn.GetIntFrom()
   pPlayerInfoById = [:]
   pPlayerInfoByName = [:]
@@ -188,6 +191,7 @@ on handle_msgstruct_fullgamestatus me, tMsg
   tdata.addProp(#game_objects, tGameObjects)
   tGameSystem.getVarMgr().set(#tournament_flag, tConn.GetBoolFrom())
   tGameSystem.sendGameSystemEvent(#set_number_of_teams, tConn.GetIntFrom())
+  tGameSystem.sendGameSystemEvent(#fullgamestatus_time, tdata[#time])
   tGameSystem.clearTurnBuffer()
   tGameSystem.sendGameSystemEvent(#verify_game_object_id_list, tObjectIdList)
   repeat with tGameObject in tdata[#game_objects]
