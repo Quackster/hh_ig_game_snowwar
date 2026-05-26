@@ -1,8 +1,14 @@
+property pPlayerInfoById, pPlayerInfoByName
+
 on construct me
+  pPlayerInfoById = [:]
+  pPlayerInfoByName = [:]
   return 1
 end
 
 on deconstruct me
+  pPlayerInfoById = VOID
+  pPlayerInfoByName = VOID
   return 1
 end
 
@@ -168,6 +174,8 @@ on handle_msgstruct_fullgamestatus me, tMsg
   tTimeToNextState = tConn.GetIntFrom()
   tStateDuration = tConn.GetIntFrom()
   tNumObjects = tConn.GetIntFrom()
+  pPlayerInfoById = [:]
+  pPlayerInfoByName = [:]
   tObjectIdList = []
   tGameObjects = []
   repeat with i = 1 to tNumObjects
@@ -214,7 +222,16 @@ on handle_msgstruct_gameend me, tMsg
       tPlayerId = tConn.GetIntFrom()
       tPlayerName = tConn.GetStrFrom()
       tPlayerScore = tConn.GetIntFrom()
-      tPlayers.addProp(tPlayerName, [#id: tPlayerId, #name: tPlayerName, #score: tPlayerScore])
+      tPlayerInfo = me.getCachedPlayerInfo(tPlayerId, tPlayerName)
+      tPlayerData = [#id: tPlayerId, #name: tPlayerName, #score: tPlayerScore]
+      if tPlayerInfo <> 0 then
+        repeat with tKey in [#figure, #sex, #room_index, #team_id, #player_id]
+          if tPlayerInfo.findPos(tKey) > 0 then
+            tPlayerData.setaProp(tKey, tPlayerInfo[tKey])
+          end if
+        end repeat
+      end if
+      tPlayers.addProp(tPlayerName, tPlayerData)
     end repeat
     if (tNumPlayers > 0) then
       tTeamScore = tConn.GetIntFrom()
@@ -232,6 +249,8 @@ on handle_msgstruct_gamereset me, tMsg
   tdata = [:]
   -- tdata.addProp(#time_until_game_start, tConn.GetIntFrom())
   tNumObjects = tConn.GetIntFrom()
+  pPlayerInfoById = [:]
+  pPlayerInfoByName = [:]
   tGameObjects = []
   tObjectIdList = []
   repeat with i = 1 to tNumObjects
@@ -273,6 +292,45 @@ on store_heightmap me, tdata, tWorldWidth, tWorldHeight
     return(0)
   end if
   return(tGameSystem.getWorld().storeHeightmap(tdata, tWorldWidth, tWorldHeight))
+end
+
+on storePlayerInfo me, tdata
+  if not (ilk(tdata) = #propList) then
+    return 0
+  end if
+  if tdata.findPos(#name) = 0 then
+    return 0
+  end if
+  tPlayerInfo = [:]
+  repeat with tKey in [#id, #int_id, #name, #figure, #sex, #room_index, #team_id, #player_id]
+    if tdata.findPos(tKey) > 0 then
+      tPlayerInfo.setaProp(tKey, tdata[tKey])
+    end if
+  end repeat
+  if tPlayerInfo.findPos(#id) > 0 then
+    pPlayerInfoById.setaProp(string(tPlayerInfo[#id]), tPlayerInfo)
+  end if
+  if tPlayerInfo.findPos(#int_id) > 0 then
+    pPlayerInfoById.setaProp(string(tPlayerInfo[#int_id]), tPlayerInfo)
+  end if
+  if tPlayerInfo.findPos(#player_id) > 0 then
+    pPlayerInfoById.setaProp(string(tPlayerInfo[#player_id]), tPlayerInfo)
+  end if
+  pPlayerInfoByName.setaProp(tPlayerInfo[#name], tPlayerInfo)
+  return 1
+end
+
+on getCachedPlayerInfo me, tPlayerId, tPlayerName
+  if listp(pPlayerInfoById) then
+    tPlayerInfo = pPlayerInfoById.getaProp(string(tPlayerId))
+    if tPlayerInfo <> 0 then
+      return tPlayerInfo
+    end if
+  end if
+  if listp(pPlayerInfoByName) then
+    return pPlayerInfoByName.getaProp(tPlayerName)
+  end if
+  return 0
 end
 
 on handle_msgstruct_gameplayerinfo me, tMsg
@@ -363,6 +421,7 @@ on parse_snowwar_gameobject me, tConn
       tdata.addProp(#figure, tConn.GetStrFrom())
       tdata.addProp(#sex, tConn.GetStrFrom())
       tdata.addProp(#str_type, "avatar")
+      me.storePlayerInfo(tdata)
     otherwise:
       error(me, ("Unsupported game object type:" && tdata[#type]), #parse_snowwar_gameobject)
   end case
